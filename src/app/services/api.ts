@@ -740,28 +740,67 @@ export const createPayment = async (payment: Omit<Payment, 'id'>): Promise<Payme
 // Authentication API
 export const login = async (email: string, password: string): Promise<User> => {
   // TODO: Replace with actual API call to your authentication system
-  // return fetch(`${BASE_URL}/auth/login`, { method: 'POST', body: JSON.stringify({ email, password }) }).then(res => res.json());
+  // return fetch(`${BASE_URL}/auth/login`, { method: 'POST', body: JSON.stringify({ email, password }) }).then(res => res.json());\n  
+  // Dynamic import to avoid circular dependency
+  const { storageService } = await import('./storage');
   
-  // Mock authentication
-  return Promise.resolve({
-    id: '1',
-    email,
-    name: 'User Name',
-    role: email.includes('admin') ? 'admin' : 'customer',
-  });
+  // Check against app_users using storage service
+  const appUsers = await storageService.getAppUsers();
+  
+  // Find user with matching email and password
+  const user = appUsers.find((u: any) => u.email === email && u.password === password);
+  
+  if (user) {
+    return Promise.resolve({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    });
+  }
+  
+  // If not found, throw error
+  throw new Error('Invalid email or password');
 };
 
 export const register = async (email: string, password: string, name: string): Promise<User> => {
   // TODO: Replace with actual API call to your authentication system
   // return fetch(`${BASE_URL}/auth/register`, { method: 'POST', body: JSON.stringify({ email, password, name }) }).then(res => res.json());
   
-  // Mock registration - automatically create customer record
-  const newCustomer = await createCustomer({
+  // Dynamic import to avoid circular dependency
+  const { storageService } = await import('./storage');
+  
+  // Check if user already exists in app_users
+  const appUsers = await storageService.getAppUsers();
+  
+  // Check for existing email in app_users
+  if (appUsers.some((u: any) => u.email === email)) {
+    throw new Error('User with this email already exists');
+  }
+  
+  // Create new customer record using storage service
+  const customerId = Date.now().toString();
+  const newCustomer = await storageService.createCustomer({
+    id: customerId,
     name,
     email,
     phone: '',
     address: '',
+    createdAt: new Date().toISOString(),
   });
+  
+  // Create app user with customer role
+  const newAppUser = {
+    id: newCustomer.id,
+    name,
+    email,
+    password, // In production, this should be hashed
+    role: 'customer',
+    createdAt: new Date().toISOString(),
+  };
+  
+  // Save to app_users using storage service (handles both local and remote)
+  await storageService.createAppUser(newAppUser);
   
   return Promise.resolve({
     id: newCustomer.id,
