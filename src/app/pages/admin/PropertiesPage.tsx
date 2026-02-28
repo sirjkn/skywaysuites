@@ -2,40 +2,57 @@ import { useState, useEffect } from 'react';
 import { 
   getProperties, 
   getFeatures, 
+  getCategories,
+  getLocations,
   createProperty, 
   updateProperty, 
   deleteProperty,
   Property, 
-  Feature 
+  Feature,
+  Category,
+  Location
 } from '../../services/api';
-import { Plus, Edit, Trash2, X, Upload } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Upload, MapPin, Tag } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Checkbox } from '../../components/ui/checkbox';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
 import { toast } from 'sonner';
+import { compressAndConvertToWebP, validateImageFile, formatBytes } from '../../utils/imageCompression';
+import { CategoriesModal } from '../../components/admin/CategoriesModal';
+import { LocationsModal } from '../../components/admin/LocationsModal';
+
+interface ImageUpload {
+  file?: File;
+  dataUrl: string;
+  isDefault: boolean;
+  uploadProgress: number;
+}
 
 export const PropertiesPage = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [features, setFeatures] = useState<Feature[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [categoriesModalOpen, setCategoriesModalOpen] = useState(false);
+  const [locationsModalOpen, setLocationsModalOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [uploadingImages, setUploadingImages] = useState<ImageUpload[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     price: '',
-    location: '',
+    locationId: '',
     bedrooms: '0',
     bathrooms: '1',
     area: '',
-    category: 'Bedsitter' as Property['category'],
+    categoryId: '',
     description: '',
     features: [] as string[],
-    imageUrls: [''],
-    defaultImageIndex: 0,
     available: true,
   });
 
@@ -45,12 +62,16 @@ export const PropertiesPage = () => {
 
   const loadData = async () => {
     try {
-      const [propertiesData, featuresData] = await Promise.all([
+      const [propertiesData, featuresData, categoriesData, locationsData] = await Promise.all([
         getProperties(),
         getFeatures(),
+        getCategories(),
+        getLocations(),
       ]);
       setProperties(propertiesData);
       setFeatures(featuresData);
+      setCategories(categoriesData);
+      setLocations(locationsData);
     } catch (error) {
       toast.error('Failed to load data');
       console.error(error);
@@ -63,17 +84,16 @@ export const PropertiesPage = () => {
     setFormData({
       name: '',
       price: '',
-      location: '',
+      locationId: '',
       bedrooms: '0',
       bathrooms: '1',
       area: '',
-      category: 'Bedsitter',
+      categoryId: '',
       description: '',
       features: [],
-      imageUrls: [''],
-      defaultImageIndex: 0,
       available: true,
     });
+    setUploadingImages([]);
     setEditingProperty(null);
   };
 
@@ -84,20 +104,31 @@ export const PropertiesPage = () => {
 
   const handleEdit = (property: Property) => {
     setEditingProperty(property);
+    
+    // Find matching category and location
+    const category = categories.find(c => c.name === property.category);
+    const location = locations.find(l => property.location.includes(l.name));
+    
     setFormData({
       name: property.name,
       price: property.price.toString(),
-      location: property.location,
+      locationId: location?.id || '',
       bedrooms: property.bedrooms.toString(),
       bathrooms: property.bathrooms.toString(),
       area: property.area.toString(),
-      category: property.category,
+      categoryId: category?.id || '',
       description: property.description,
       features: property.features,
-      imageUrls: property.images.map(img => img.url),
-      defaultImageIndex: property.images.findIndex(img => img.isDefault),
       available: property.available,
     });
+    
+    // Set existing images
+    setUploadingImages(property.images.map(img => ({
+      dataUrl: img.url,
+      isDefault: img.isDefault,
+      uploadProgress: 100,
+    })));
+    
     setDialogOpen(true);
   };
 
@@ -114,23 +145,120 @@ export const PropertiesPage = () => {
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    
+    for (const file of files) {
+      // Validate file
+      const error = validateImageFile(file, 5);
+      if (error) {
+        toast.error(error);
+        continue;
+      }
+      
+      // Add placeholder for upload progress
+      const uploadId = Date.now() + Math.random();
+      const newImage: ImageUpload = {
+        file,
+        dataUrl: '',
+        isDefault: uploadingImages.length === 0,
+        uploadProgress: 0,
+      };
+      
+      setUploadingImages(prev => [...prev, newImage]);
+      
+      try {
+        // Simulate upload progress
+        const progressInterval = setInterval(() => {
+          setUploadingImages(prev => 
+            prev.map(img => 
+              img.file === file && img.uploadProgress < 90 
+                ? { ...img, uploadProgress: img.uploadProgress + 10 }
+                : img
+            )
+          );
+        }, 100);
+        
+        // Compress and convert to WebP
+        const result = await compressAndConvertToWebP(file);
+        
+        clearInterval(progressInterval);
+        
+        // Update with compressed image
+        setUploadingImages(prev => 
+          prev.map(img => 
+            img.file === file 
+              ? { 
+                  ...img, 
+                  dataUrl: result.dataUrl, 
+                  file: result.file,
+                  uploadProgress: 100 
+                }
+              : img
+          )
+        );
+        
+        toast.success(`Image compressed: ${formatBytes(result.originalSize)} → ${formatBytes(result.compressedSize)} (${result.compressionRatio.toFixed(1)}% reduction)`);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to compress image');
+        setUploadingImages(prev => prev.filter(img => img.file !== file));
+      }
+    }
+    
+    // Reset input
+    e.target.value = '';
+  };
+
+  const removeImage = (index: number) => {
+    setUploadingImages(prev => {
+      const newImages = prev.filter((_, i) => i !== index);
+      // If removed image was default and there are other images, make first one default
+      if (prev[index].isDefault && newImages.length > 0) {
+        newImages[0].isDefault = true;
+      }
+      return newImages;
+    });
+  };
+
+  const setDefaultImage = (index: number) => {
+    setUploadingImages(prev => 
+      prev.map((img, i) => ({
+        ...img,
+        isDefault: i === index,
+      }))
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (uploadingImages.length === 0) {
+      toast.error('Please upload at least one image');
+      return;
+    }
+    
+    const category = categories.find(c => c.id === formData.categoryId);
+    const location = locations.find(l => l.id === formData.locationId);
+    
+    if (!category || !location) {
+      toast.error('Please select valid category and location');
+      return;
+    }
     
     const propertyData = {
       name: formData.name,
       price: parseFloat(formData.price),
-      location: formData.location,
+      location: `${location.name}, ${location.city}`,
       bedrooms: parseInt(formData.bedrooms),
       bathrooms: parseInt(formData.bathrooms),
       area: parseInt(formData.area),
-      category: formData.category,
+      category: category.name as Property['category'],
       description: formData.description,
       features: formData.features,
-      images: formData.imageUrls.filter(url => url.trim()).map((url, index) => ({
+      images: uploadingImages.map((img, index) => ({
         id: `img-${index}`,
-        url,
-        isDefault: index === formData.defaultImageIndex,
+        url: img.dataUrl,
+        isDefault: img.isDefault,
       })),
       available: formData.available,
     };
@@ -152,28 +280,6 @@ export const PropertiesPage = () => {
     }
   };
 
-  const addImageUrl = () => {
-    setFormData({
-      ...formData,
-      imageUrls: [...formData.imageUrls, ''],
-    });
-  };
-
-  const updateImageUrl = (index: number, url: string) => {
-    const newUrls = [...formData.imageUrls];
-    newUrls[index] = url;
-    setFormData({ ...formData, imageUrls: newUrls });
-  };
-
-  const removeImageUrl = (index: number) => {
-    const newUrls = formData.imageUrls.filter((_, i) => i !== index);
-    setFormData({ 
-      ...formData, 
-      imageUrls: newUrls.length > 0 ? newUrls : [''],
-      defaultImageIndex: formData.defaultImageIndex >= newUrls.length ? 0 : formData.defaultImageIndex,
-    });
-  };
-
   const toggleFeature = (featureId: string) => {
     setFormData({
       ...formData,
@@ -189,33 +295,51 @@ export const PropertiesPage = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-[#36454F]">Properties</h1>
-          <p className="text-[#36454F]/70 mt-1">Manage your property listings</p>
+          <h1 className="text-2xl font-bold text-[#2C3E50]">Properties</h1>
+          <p className="text-[#7F8C8D] text-sm mt-1">Manage your property listings</p>
         </div>
-        <Button onClick={handleAdd} className="bg-[#6B7F39] hover:bg-[#556230]">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Property
-        </Button>
+        <div className="flex gap-3">
+          <Button 
+            onClick={() => setCategoriesModalOpen(true)}
+            variant="outline"
+            className="border-[#6B7F39] text-[#6B7F39] hover:bg-[#6B7F39] hover:text-white"
+          >
+            <Tag className="w-4 h-4 mr-2" />
+            Categories
+          </Button>
+          <Button 
+            onClick={() => setLocationsModalOpen(true)}
+            variant="outline"
+            className="border-[#6B7F39] text-[#6B7F39] hover:bg-[#6B7F39] hover:text-white"
+          >
+            <MapPin className="w-4 h-4 mr-2" />
+            Locations
+          </Button>
+          <Button onClick={handleAdd} className="bg-[#6B7F39] hover:bg-[#556230] text-white">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Property
+          </Button>
+        </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-md overflow-hidden border border-[#6B7F39]/20">
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-[#F5E6D3]">
+            <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-4 text-left text-[#36454F]">Property</th>
-                <th className="px-6 py-4 text-left text-[#36454F]">Category</th>
-                <th className="px-6 py-4 text-left text-[#36454F]">Location</th>
-                <th className="px-6 py-4 text-left text-[#36454F]">Price/Day</th>
-                <th className="px-6 py-4 text-left text-[#36454F]">Status</th>
-                <th className="px-6 py-4 text-right text-[#36454F]">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#7F8C8D] uppercase tracking-wider">Property</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#7F8C8D] uppercase tracking-wider">Category</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#7F8C8D] uppercase tracking-wider">Location</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#7F8C8D] uppercase tracking-wider">Price/Day</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#7F8C8D] uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-[#7F8C8D] uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#6B7F39]/10">
+            <tbody className="divide-y divide-gray-200">
               {properties.map((property) => (
-                <tr key={property.id} className="hover:bg-[#FAF4EC] transition-colors">
+                <tr key={property.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <img
@@ -224,41 +348,39 @@ export const PropertiesPage = () => {
                         className="w-16 h-16 rounded-lg object-cover"
                       />
                       <div>
-                        <p className="font-medium text-[#36454F]">{property.name}</p>
-                        <p className="text-sm text-[#36454F]/70">{property.bedrooms} bed, {property.bathrooms} bath</p>
+                        <p className="font-medium text-[#2C3E50]">{property.name}</p>
+                        <p className="text-sm text-[#7F8C8D]">{property.bedrooms} bed, {property.bathrooms} bath</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-[#36454F]">{property.category}</td>
-                  <td className="px-6 py-4 text-[#36454F]">{property.location}</td>
-                  <td className="px-6 py-4 text-[#6B7F39] font-semibold">${property.price}</td>
+                  <td className="px-6 py-4 text-sm text-[#2C3E50]">{property.category}</td>
+                  <td className="px-6 py-4 text-sm text-[#2C3E50]">{property.location}</td>
+                  <td className="px-6 py-4 text-sm font-semibold text-[#6B7F39]">${property.price}</td>
                   <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-sm ${
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       property.available 
-                        ? 'bg-green-100 text-green-700' 
-                        : 'bg-red-100 text-red-700'
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'
                     }`}>
                       {property.available ? 'Available' : 'Unavailable'}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
-                      <Button
+                      <button
                         onClick={() => handleEdit(property)}
-                        variant="ghost"
-                        size="sm"
-                        className="text-[#6B7F39] hover:text-[#556230]"
+                        className="p-2 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Edit"
                       >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
+                        <Edit className="w-4 h-4 text-[#3498DB]" />
+                      </button>
+                      <button
                         onClick={() => handleDelete(property.id)}
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-600 hover:text-red-700"
+                        className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete"
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                        <Trash2 className="w-4 h-4 text-[#E74C3C]" />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -272,9 +394,12 @@ export const PropertiesPage = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl text-[#36454F]">
+            <DialogTitle className="text-2xl text-[#2C3E50]">
               {editingProperty ? 'Edit Property' : 'Add New Property'}
             </DialogTitle>
+            <DialogDescription className="text-sm text-[#7F8C8D]">
+              {editingProperty ? 'Update the details of this property.' : 'Enter the details of the new property.'}
+            </DialogDescription>
           </DialogHeader>
           
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -293,18 +418,25 @@ export const PropertiesPage = () => {
               <div>
                 <Label htmlFor="category">Category</Label>
                 <Select 
-                  value={formData.category} 
-                  onValueChange={(value) => setFormData({ ...formData, category: value as Property['category'] })}
+                  value={formData.categoryId} 
+                  onValueChange={(value) => {
+                    const category = categories.find(c => c.id === value);
+                    setFormData({ 
+                      ...formData, 
+                      categoryId: value,
+                      bedrooms: category?.bedrooms.toString() || '0'
+                    });
+                  }}
                 >
                   <SelectTrigger className="mt-1">
-                    <SelectValue />
+                    <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Bedsitter">Bedsitter</SelectItem>
-                    <SelectItem value="1-Bedroom">1-Bedroom</SelectItem>
-                    <SelectItem value="2-Bedroom">2-Bedroom</SelectItem>
-                    <SelectItem value="3-Bedroom">3-Bedroom</SelectItem>
-                    <SelectItem value="4-Bedroom">4-Bedroom</SelectItem>
+                    {categories.map(category => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name} ({category.bedrooms} {category.bedrooms === 1 ? 'bedroom' : 'bedrooms'})
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -316,6 +448,7 @@ export const PropertiesPage = () => {
                 <Input
                   id="price"
                   type="number"
+                  step="0.01"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                   required
@@ -325,27 +458,35 @@ export const PropertiesPage = () => {
               
               <div>
                 <Label htmlFor="location">Location</Label>
-                <Input
-                  id="location"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  required
-                  className="mt-1"
-                />
+                <Select 
+                  value={formData.locationId} 
+                  onValueChange={(value) => setFormData({ ...formData, locationId: value })}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locations.map(location => (
+                      <SelectItem key={location.id} value={location.id}>
+                        {location.name}, {location.city}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="bedrooms">Bedrooms</Label>
                 <Input
                   id="bedrooms"
                   type="number"
-                  min="0"
                   value={formData.bedrooms}
                   onChange={(e) => setFormData({ ...formData, bedrooms: e.target.value })}
                   required
                   className="mt-1"
+                  readOnly
                 />
               </div>
               
@@ -354,7 +495,6 @@ export const PropertiesPage = () => {
                 <Input
                   id="bathrooms"
                   type="number"
-                  min="1"
                   value={formData.bathrooms}
                   onChange={(e) => setFormData({ ...formData, bathrooms: e.target.value })}
                   required
@@ -363,7 +503,7 @@ export const PropertiesPage = () => {
               </div>
               
               <div>
-                <Label htmlFor="area">Area (sqft)</Label>
+                <Label htmlFor="area">Area (sq ft)</Label>
                 <Input
                   id="area"
                   type="number"
@@ -381,15 +521,98 @@ export const PropertiesPage = () => {
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={4}
-                required
+                rows={3}
                 className="mt-1"
+                required
               />
+            </div>
+
+            {/* Image Upload */}
+            <div>
+              <Label>Property Images (Max 5MB each)</Label>
+              <div className="mt-2 space-y-4">
+                {/* Upload Button */}
+                <div>
+                  <input
+                    type="file"
+                    id="image-upload"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="image-upload"
+                    className="inline-flex items-center px-4 py-2 border border-[#6B7F39] rounded-lg cursor-pointer hover:bg-[#6B7F39] hover:text-white transition-colors text-[#6B7F39] font-medium"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Images
+                  </label>
+                  <p className="text-xs text-[#7F8C8D] mt-1">
+                    Images will be automatically compressed and converted to WebP format
+                  </p>
+                </div>
+
+                {/* Image Previews */}
+                {uploadingImages.length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {uploadingImages.map((image, index) => (
+                      <div key={index} className="relative group">
+                        <div className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200">
+                          {image.dataUrl ? (
+                            <img
+                              src={image.dataUrl}
+                              alt={`Upload ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                              <div className="text-center">
+                                <div className="text-sm text-[#7F8C8D]">
+                                  {image.uploadProgress}%
+                                </div>
+                                <div className="w-16 h-1 bg-gray-200 rounded-full mt-2 overflow-hidden">
+                                  <div 
+                                    className="h-full bg-[#6B7F39] transition-all"
+                                    style={{ width: `${image.uploadProgress}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        {image.uploadProgress === 100 && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDefaultImage(index)}
+                              className={`absolute bottom-2 left-2 right-2 py-1 px-2 text-xs rounded ${
+                                image.isDefault
+                                  ? 'bg-[#6B7F39] text-white'
+                                  : 'bg-white text-[#6B7F39] opacity-0 group-hover:opacity-100'
+                              } transition-opacity`}
+                            >
+                              {image.isDefault ? 'Default' : 'Set as Default'}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
               <Label>Features</Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
+              <div className="mt-2 grid grid-cols-2 md:grid-cols-3 gap-3">
                 {features.map((feature) => (
                   <div key={feature.id} className="flex items-center space-x-2">
                     <Checkbox
@@ -397,51 +620,12 @@ export const PropertiesPage = () => {
                       checked={formData.features.includes(feature.id)}
                       onCheckedChange={() => toggleFeature(feature.id)}
                     />
-                    <label htmlFor={`feature-${feature.id}`} className="text-sm cursor-pointer">
+                    <label
+                      htmlFor={`feature-${feature.id}`}
+                      className="text-sm text-[#2C3E50] cursor-pointer"
+                    >
                       {feature.name}
                     </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <Label>Images (URLs)</Label>
-                <Button type="button" onClick={addImageUrl} size="sm" variant="outline">
-                  <Plus className="w-4 h-4 mr-1" />
-                  Add Image
-                </Button>
-              </div>
-              <div className="space-y-3">
-                {formData.imageUrls.map((url, index) => (
-                  <div key={index} className="flex gap-2">
-                    <Input
-                      value={url}
-                      onChange={(e) => updateImageUrl(index, e.target.value)}
-                      placeholder="https://example.com/image.jpg"
-                      className="flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setFormData({ ...formData, defaultImageIndex: index })}
-                      className={formData.defaultImageIndex === index ? 'bg-[#6B7F39] text-white' : ''}
-                    >
-                      Default
-                    </Button>
-                    {formData.imageUrls.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeImageUrl(index)}
-                        className="text-red-600"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    )}
                   </div>
                 ))}
               </div>
@@ -453,22 +637,43 @@ export const PropertiesPage = () => {
                 checked={formData.available}
                 onCheckedChange={(checked) => setFormData({ ...formData, available: checked as boolean })}
               />
-              <label htmlFor="available" className="text-sm cursor-pointer">
-                Property is available for booking
+              <label htmlFor="available" className="text-sm text-[#2C3E50]">
+                Available for booking
               </label>
             </div>
 
-            <div className="flex justify-end gap-3">
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setDialogOpen(false);
+                  resetForm();
+                }}
+              >
                 Cancel
               </Button>
-              <Button type="submit" className="bg-[#6B7F39] hover:bg-[#556230]">
-                {editingProperty ? 'Update' : 'Create'} Property
+              <Button type="submit" className="bg-[#6B7F39] hover:bg-[#556230] text-white">
+                {editingProperty ? 'Update Property' : 'Create Property'}
               </Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Categories Modal */}
+      <CategoriesModal 
+        open={categoriesModalOpen} 
+        onOpenChange={setCategoriesModalOpen}
+        onUpdate={loadData}
+      />
+
+      {/* Locations Modal */}
+      <LocationsModal 
+        open={locationsModalOpen} 
+        onOpenChange={setLocationsModalOpen}
+        onUpdate={loadData}
+      />
     </div>
   );
 };

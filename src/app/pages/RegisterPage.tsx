@@ -62,13 +62,10 @@ export const RegisterPage = () => {
       <div className="max-w-md w-full">
         {/* Logo */}
         <Link to="/" className="flex items-center justify-center gap-3 mb-8 group">
-          <div className="bg-[#6B7F39] p-3 rounded-lg group-hover:bg-[#556230] transition-colors">
+          <div className="bg-[#36454F] p-3 rounded-lg group-hover:bg-[#2C3E50] transition-colors">
             <Building2 className="w-8 h-8 text-white" />
           </div>
-          <div className="flex flex-col">
-            <span className="font-semibold text-2xl text-[#36454F]">Skyway Suites</span>
-            <span className="text-sm text-[#6B7F39]">Your Perfect Stay</span>
-          </div>
+          <span className="text-3xl font-bold text-[#36454F]">Skyway Suites</span>
         </Link>
 
         {/* Register Form */}

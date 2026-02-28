@@ -5,7 +5,7 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
 import { toast } from 'sonner';
 
 export const CustomersPage = () => {
@@ -100,7 +100,7 @@ export const CustomersPage = () => {
           <h1 className="text-3xl font-bold text-[#36454F]">Customers</h1>
           <p className="text-[#36454F]/70 mt-1">Manage customer information</p>
         </div>
-        <Button onClick={handleAdd} className="bg-[#6B7F39] hover:bg-[#556230]">
+        <Button onClick={handleAdd} className="bg-[#6B7F39] hover:bg-[#556230] text-white">
           <Plus className="w-4 h-4 mr-2" />
           Add Customer
         </Button>
@@ -173,6 +173,9 @@ export const CustomersPage = () => {
             <DialogTitle className="text-2xl text-[#36454F]">
               {editingCustomer ? 'Edit Customer' : 'Add New Customer'}
             </DialogTitle>
+            <DialogDescription className="text-sm text-[#36454F]/70">
+              {editingCustomer ? 'Update the customer details below.' : 'Enter the customer details below.'}
+            </DialogDescription>
           </DialogHeader>
           
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -238,7 +241,7 @@ export const CustomersPage = () => {
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" className="bg-[#6B7F39] hover:bg-[#556230]">
+              <Button type="submit" className="bg-[#6B7F39] hover:bg-[#556230] text-white">
                 {editingCustomer ? 'Update' : 'Create'} Customer
               </Button>
             </div>

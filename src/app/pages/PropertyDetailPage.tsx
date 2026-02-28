@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { getPropertyById, getFeatures, Property, Feature } from '../services/api';
 import { Navbar } from '../components/Navbar';
+import { BookingModal } from '../components/BookingModal';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   X, 
@@ -24,6 +25,7 @@ export const PropertyDetailPage = () => {
   const [features, setFeatures] = useState<Feature[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
   useEffect(() => {
     const loadProperty = async () => {
@@ -58,8 +60,7 @@ export const PropertyDetailPage = () => {
       toast.info('Please login to book this property');
       navigate('/login', { state: { from: `/property/${id}` } });
     } else {
-      toast.success('Booking initiated! (Connect to your payment system)');
-      // TODO: Redirect to booking/payment page
+      setIsBookingModalOpen(true);
     }
   };
 
@@ -81,7 +82,7 @@ export const PropertyDetailPage = () => {
         <Navbar />
         <div className="pt-20 flex items-center justify-center min-h-screen">
           <div className="text-center">
-            <div className="w-16 h-16 border-4 border-[#6B7F39] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <div className="w-16 h-16 border-4 border-[#36454F] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
             <p className="text-[#36454F]/70">Loading property...</p>
           </div>
         </div>
@@ -291,6 +292,17 @@ export const PropertyDetailPage = () => {
           </p>
         </div>
       </footer>
+
+      {/* Booking Modal */}
+      {isBookingModalOpen && (
+        <BookingModal
+          isOpen={isBookingModalOpen}
+          onClose={() => setIsBookingModalOpen(false)}
+          propertyName={property.name}
+          propertyPrice={property.price}
+          propertyId={property.id}
+        />
+      )}
     </div>
   );
 };

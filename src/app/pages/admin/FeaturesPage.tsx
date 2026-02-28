@@ -4,7 +4,7 @@ import { Plus, Edit, Trash2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
 import { toast } from 'sonner';
 
 export const FeaturesPage = () => {
@@ -87,7 +87,7 @@ export const FeaturesPage = () => {
           <h1 className="text-3xl font-bold text-[#36454F]">Features</h1>
           <p className="text-[#36454F]/70 mt-1">Manage property features and amenities</p>
         </div>
-        <Button onClick={handleAdd} className="bg-[#6B7F39] hover:bg-[#556230]">
+        <Button onClick={handleAdd} className="bg-[#6B7F39] hover:bg-[#556230] text-white">
           <Plus className="w-4 h-4 mr-2" />
           Add Feature
         </Button>
@@ -141,6 +141,9 @@ export const FeaturesPage = () => {
             <DialogTitle className="text-2xl text-[#36454F]">
               {editingFeature ? 'Edit Feature' : 'Add New Feature'}
             </DialogTitle>
+            <DialogDescription className="text-sm text-[#36454F]/70">
+              {editingFeature ? 'Edit the details of the feature.' : 'Add a new feature to the system.'}
+            </DialogDescription>
           </DialogHeader>
           
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -174,7 +177,7 @@ export const FeaturesPage = () => {
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" className="bg-[#6B7F39] hover:bg-[#556230]">
+              <Button type="submit" className="bg-[#6B7F39] hover:bg-[#556230] text-white">
                 {editingFeature ? 'Update' : 'Create'} Feature
               </Button>
             </div>

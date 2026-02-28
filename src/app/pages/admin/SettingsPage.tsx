@@ -158,7 +158,7 @@ export const SettingsPage = () => {
                 />
               </div>
 
-              <Button onClick={handleSaveTheme} className="bg-[#6B7F39] hover:bg-[#556230]">
+              <Button onClick={handleSaveTheme} className="bg-[#6B7F39] hover:bg-[#556230] text-white">
                 Save Theme Settings
               </Button>
             </div>
@@ -233,7 +233,7 @@ export const SettingsPage = () => {
                 />
               </div>
 
-              <Button onClick={handleSaveSMS} className="bg-[#6B7F39] hover:bg-[#556230]">
+              <Button onClick={handleSaveSMS} className="bg-[#6B7F39] hover:bg-[#556230] text-white">
                 Save SMS Settings
               </Button>
             </div>
@@ -339,7 +339,7 @@ export const SettingsPage = () => {
                 </div>
               </div>
 
-              <Button onClick={handleSavePayment} className="bg-[#6B7F39] hover:bg-[#556230]">
+              <Button onClick={handleSavePayment} className="bg-[#6B7F39] hover:bg-[#556230] text-white">
                 Save Payment Settings
               </Button>
             </div>
@@ -356,7 +356,7 @@ export const SettingsPage = () => {
                 <p className="text-sm text-[#36454F]/70 mb-4">
                   Create a complete backup of your database including all properties, customers, bookings, and settings.
                 </p>
-                <Button onClick={handleBackup} className="bg-[#6B7F39] hover:bg-[#556230]">
+                <Button onClick={handleBackup} className="bg-[#6B7F39] hover:bg-[#556230] text-white">
                   Create Backup Now
                 </Button>
               </div>
@@ -449,7 +449,7 @@ export const SettingsPage = () => {
               </div>
 
               <div className="flex gap-3">
-                <Button onClick={handleSaveDatabase} className="bg-[#6B7F39] hover:bg-[#556230]">
+                <Button onClick={handleSaveDatabase} className="bg-[#6B7F39] hover:bg-[#556230] text-white">
                   Save Database Settings
                 </Button>
                 <Button variant="outline">Test Connection</Button>

@@ -1,7 +1,6 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
-  Home, 
   Building2, 
   Star, 
   Users, 
@@ -9,13 +8,13 @@ import {
   Settings, 
   LogOut,
   Menu,
-  X 
+  X,
+  FileStack
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { Button } from '../ui/button';
 
 export const AdminLayout = () => {
-  const { isAuthenticated, isAdmin, logout } = useAuth();
+  const { isAuthenticated, isAdmin, logout, user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -32,9 +31,10 @@ export const AdminLayout = () => {
   };
 
   const navItems = [
-    { path: '/admin/properties', label: 'Properties', icon: Building2 },
+    { path: '/admin', label: 'Properties', icon: Building2 },
     { path: '/admin/features', label: 'Features', icon: Star },
     { path: '/admin/customers', label: 'Customers', icon: Users },
+    { path: '/admin/menu-pages', label: 'Menu Pages', icon: FileStack },
     { path: '/admin/reports', label: 'Reports', icon: FileText },
     { path: '/admin/settings', label: 'Settings', icon: Settings },
   ];
@@ -44,114 +44,161 @@ export const AdminLayout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFCFA]">
-      {/* Top Navigation */}
-      <nav className="bg-white border-b border-[#6B7F39]/20 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-8">
-              <Link to="/" className="flex items-center gap-2">
-                <Building2 className="w-8 h-8 text-[#6B7F39]" />
-                <span className="font-semibold text-xl text-[#36454F]">Skyway Suites Admin</span>
-              </Link>
-              
-              {/* Desktop Navigation */}
-              <div className="hidden md:flex items-center gap-1">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = location.pathname === item.path;
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-                        isActive
-                          ? 'bg-[#6B7F39] text-white'
-                          : 'text-[#36454F] hover:bg-[#F5E6D3]'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span>{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
+    <div className="min-h-screen bg-gradient-warm flex">
+      {/* Left Sidebar - Desktop */}
+      <aside className="hidden md:flex md:flex-col md:w-[240px] bg-gradient-charcoal fixed h-full z-40 shadow-charcoal">
+        {/* Logo */}
+        <div className="p-6 border-b border-white/10">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-8 h-8 bg-gradient-olive rounded-lg flex items-center justify-center shadow-olive">
+              <span className="text-white text-sm font-bold">S</span>
             </div>
-
-            <div className="flex items-center gap-4">
-              <Link to="/" className="hidden md:flex items-center gap-2 text-[#36454F] hover:text-[#6B7F39] transition-colors">
-                <Home className="w-4 h-4" />
-                <span>View Site</span>
-              </Link>
-              <Button 
-                onClick={handleLogout}
-                variant="ghost"
-                className="hidden md:flex items-center gap-2 text-[#36454F] hover:text-[#6B7F39]"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Logout</span>
-              </Button>
-
-              {/* Mobile menu button */}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 rounded-lg hover:bg-[#F5E6D3] text-[#36454F]"
-              >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </button>
-            </div>
+            <span className="font-semibold text-lg text-white">Skyway</span>
           </div>
+          <p className="text-xs text-[#95A5A6] ml-10">Admin Panel</p>
         </div>
 
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-[#6B7F39]/20 bg-white">
-            <div className="px-4 py-4 space-y-2">
+        {/* Navigation Links */}
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path || 
+                           (item.path === '/admin' && location.pathname === '/admin/properties');
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${
+                  isActive
+                    ? 'bg-gradient-olive text-white shadow-olive'
+                    : 'text-[#BDC3C7] hover:bg-white/5 hover:text-white'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span className="text-sm font-medium">{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Bottom Section - Desktop */}
+        <div className="p-3 border-t border-white/10">
+          <Link
+            to="/"
+            className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-[#BDC3C7] hover:bg-white/5 hover:text-white transition-all"
+          >
+            <span className="text-sm">View Site</span>
+          </Link>
+        </div>
+      </aside>
+
+      {/* Mobile Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md border-b border-gray-200 z-50 shadow-sm">
+        <div className="flex items-center justify-between p-4">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-olive rounded-lg flex items-center justify-center shadow-olive">
+              <span className="text-white text-sm font-bold">S</span>
+            </div>
+            <span className="font-semibold text-lg text-[#2C3E50]">Skyway</span>
+          </div>
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 rounded-lg hover:bg-[#F5E6D3] text-[#2C3E50] transition-colors"
+          >
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Sidebar */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 modal-backdrop z-40 animate-fade-in" onClick={() => setMobileMenuOpen(false)}>
+          <div className="fixed top-0 left-0 bottom-0 w-64 bg-gradient-charcoal shadow-charcoal animate-slide-in-left" onClick={(e) => e.stopPropagation()}>
+            {/* Logo */}
+            <div className="p-6 border-b border-white/10">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-8 h-8 bg-gradient-olive rounded-lg flex items-center justify-center shadow-olive">
+                  <span className="text-white text-sm font-bold">S</span>
+                </div>
+                <span className="font-semibold text-lg text-white">Skyway</span>
+              </div>
+              <p className="text-xs text-[#95A5A6] ml-10">Admin Panel</p>
+            </div>
+
+            {/* Navigation Links */}
+            <nav className="px-3 py-4 space-y-1">
               {navItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path;
+                const isActive = location.pathname === item.path || 
+                               (item.path === '/admin' && location.pathname === '/admin/properties');
                 return (
                   <Link
                     key={item.path}
                     to={item.path}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all ${
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${
                       isActive
-                        ? 'bg-[#6B7F39] text-white'
-                        : 'text-[#36454F] hover:bg-[#F5E6D3]'
+                        ? 'bg-gradient-olive text-white shadow-olive'
+                        : 'text-[#BDC3C7] hover:bg-white/5 hover:text-white'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
-                    <span>{item.label}</span>
+                    <span className="text-sm font-medium">{item.label}</span>
                   </Link>
                 );
               })}
+            </nav>
+
+            {/* Bottom Section */}
+            <div className="absolute bottom-4 left-3 right-3 border-t border-white/10 pt-4">
               <Link
                 to="/"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 px-4 py-3 rounded-lg text-[#36454F] hover:bg-[#F5E6D3]"
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-[#BDC3C7] hover:bg-white/5 hover:text-white transition-all"
               >
-                <Home className="w-4 h-4" />
-                <span>View Site</span>
+                <span className="text-sm">View Site</span>
               </Link>
               <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  handleLogout();
-                }}
-                className="w-full flex items-center gap-2 px-4 py-3 rounded-lg text-[#36454F] hover:bg-[#F5E6D3]"
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-[#BDC3C7] hover:bg-white/5 hover:text-white transition-all mt-2"
               >
                 <LogOut className="w-4 h-4" />
-                <span>Logout</span>
+                <span className="text-sm">Logout</span>
               </button>
             </div>
           </div>
-        )}
-      </nav>
+        </div>
+      )}
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Outlet />
+      {/* Main Content Area */}
+      <main className="flex-1 md:ml-[240px]">
+        {/* Top Bar */}
+        <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 px-6 py-4 flex items-center justify-end gap-4 shadow-sm sticky top-0 z-30">
+          <Link
+            to="/"
+            className="text-sm text-[#2C3E50] hover:text-[#6B7F39] transition-colors font-medium"
+          >
+            View Site
+          </Link>
+          <div className="border-l border-gray-300 pl-4 flex items-center gap-3">
+            <div className="text-right">
+              <p className="text-sm text-[#6B7F39] font-medium">{user?.email || 'admin@skyway.com'}</p>
+              <p className="text-xs text-[#7F8C8D]">Administrator</p>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="p-2 hover:bg-[#F5E6D3] rounded-lg transition-all duration-300"
+              title="Logout"
+            >
+              <LogOut className="w-4 h-4 text-[#7F8C8D]" />
+            </button>
+          </div>
+        </div>
+
+        {/* Page Content */}
+        <div className="p-6 page-transition">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

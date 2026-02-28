@@ -75,6 +75,50 @@ export interface Payment {
   date: string;
 }
 
+export interface MenuPage {
+  id: string;
+  label: string;
+  path: string;
+  type: 'link' | 'anchor';
+  order: number;
+  visible: boolean;
+  content?: string; // HTML content for the page
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  bedrooms: number;
+  description?: string;
+}
+
+export interface Location {
+  id: string;
+  name: string;
+  city: string;
+  area?: string;
+}
+
+export interface PaymentMethod {
+  id: string;
+  name: string;
+  enabled: boolean;
+  type: 'mpesa' | 'stripe' | 'paypal' | 'bank_transfer' | 'cash';
+}
+
+export interface Settings {
+  paymentMethods: PaymentMethod[];
+  theme: {
+    primaryColor: string;
+    secondaryColor: string;
+    darkMode: boolean;
+  };
+  sms: {
+    provider: string;
+    enabled: boolean;
+  };
+}
+
 // Mock Data - Replace with your database calls
 const mockProperties: Property[] = [
   {
@@ -240,6 +284,187 @@ const mockPayments: Payment[] = [
     date: '2026-02-20',
   },
 ];
+
+const mockMenuPages: MenuPage[] = [
+  {
+    id: '1',
+    label: 'Home',
+    path: '/',
+    type: 'link',
+    order: 1,
+    visible: true,
+  },
+  {
+    id: '2',
+    label: 'About Us',
+    path: '/about',
+    type: 'link',
+    order: 2,
+    visible: true,
+    content: `
+      <h2>About Skyway Suites</h2>
+      <p>Welcome to Skyway Suites, your premier destination for luxury property rentals. We specialize in providing high-quality accommodation solutions for both short-term and long-term stays.</p>
+      
+      <h3>Our Mission</h3>
+      <p>To provide exceptional living experiences through carefully curated properties that meet the highest standards of comfort, safety, and convenience.</p>
+      
+      <h3>Why Choose Us?</h3>
+      <ul>
+        <li><strong>Quality Properties:</strong> Each property is carefully vetted and maintained to ensure the highest standards.</li>
+        <li><strong>Prime Locations:</strong> Our properties are located in the most desirable areas, close to amenities and transportation.</li>
+        <li><strong>24/7 Support:</strong> Our dedicated team is always available to assist you with any questions or concerns.</li>
+        <li><strong>Flexible Booking:</strong> We offer flexible booking options to suit your needs.</li>
+      </ul>
+      
+      <h3>Contact Us</h3>
+      <p>Have questions? Reach out to us at <strong>+254 700 000 000</strong> or email us at <strong>info@skywaysuites.com</strong></p>
+    `,
+  },
+  {
+    id: '3',
+    label: 'Contact',
+    path: '/contact',
+    type: 'link',
+    order: 3,
+    visible: true,
+    content: `
+      <h2>Get In Touch</h2>
+      <p>We'd love to hear from you! Whether you have a question about our properties, pricing, or anything else, our team is ready to answer all your questions.</p>
+      
+      <h3>Contact Information</h3>
+      <p><strong>Phone:</strong> +254 700 000 000</p>
+      <p><strong>Email:</strong> info@skywaysuites.com</p>
+      <p><strong>Address:</strong> Nairobi, Kenya</p>
+      
+      <h3>Business Hours</h3>
+      <p>Monday - Friday: 8:00 AM - 6:00 PM</p>
+      <p>Saturday: 9:00 AM - 4:00 PM</p>
+      <p>Sunday: Closed</p>
+      
+      <blockquote>
+        <p>"Your satisfaction is our priority. We strive to provide the best service possible."</p>
+      </blockquote>
+    `,
+  },
+];
+
+const mockCategories: Category[] = [
+  {
+    id: '1',
+    name: 'Bedsitter',
+    bedrooms: 0,
+    description: 'Cozy bedsitter with modern amenities and stunning sunset views. Perfect for young professionals.',
+  },
+  {
+    id: '2',
+    name: '1-Bedroom',
+    bedrooms: 1,
+    description: 'Elegant 1-bedroom apartment with contemporary design and premium finishes.',
+  },
+  {
+    id: '3',
+    name: '2-Bedroom',
+    bedrooms: 2,
+    description: 'Beautiful 2-bedroom suite with ample space and modern kitchen. Family-friendly.',
+  },
+  {
+    id: '4',
+    name: '3-Bedroom',
+    bedrooms: 3,
+    description: 'Luxurious penthouse with panoramic views and top-tier amenities.',
+  },
+  {
+    id: '5',
+    name: '4-Bedroom',
+    bedrooms: 4,
+    description: 'Grand 4-bedroom villa with private garden, pool, and premium security.',
+  },
+];
+
+const mockLocations: Location[] = [
+  {
+    id: '1',
+    name: 'Downtown',
+    city: 'Nairobi',
+    area: 'Central Business District',
+  },
+  {
+    id: '2',
+    name: 'Westlands',
+    city: 'Nairobi',
+    area: 'High-end residential area',
+  },
+  {
+    id: '3',
+    name: 'Kilimani',
+    city: 'Nairobi',
+    area: 'Residential and commercial area',
+  },
+  {
+    id: '4',
+    name: 'Karen',
+    city: 'Nairobi',
+    area: 'Luxury residential area',
+  },
+  {
+    id: '5',
+    name: 'Runda',
+    city: 'Nairobi',
+    area: 'Residential and commercial area',
+  },
+  {
+    id: '6',
+    name: 'Lavington',
+    city: 'Nairobi',
+    area: 'Residential area',
+  },
+];
+
+const mockPaymentMethods: PaymentMethod[] = [
+  {
+    id: '1',
+    name: 'M-Pesa',
+    enabled: true,
+    type: 'mpesa',
+  },
+  {
+    id: '2',
+    name: 'Stripe',
+    enabled: false,
+    type: 'stripe',
+  },
+  {
+    id: '3',
+    name: 'PayPal',
+    enabled: false,
+    type: 'paypal',
+  },
+  {
+    id: '4',
+    name: 'Bank Transfer',
+    enabled: false,
+    type: 'bank_transfer',
+  },
+  {
+    id: '5',
+    name: 'Cash',
+    enabled: false,
+    type: 'cash',
+  },
+];
+
+const mockSettings: Settings = {
+  paymentMethods: mockPaymentMethods,
+  theme: {
+    primaryColor: '#007bff',
+    secondaryColor: '#6c757d',
+    darkMode: false,
+  },
+  sms: {
+    provider: 'Twilio',
+    enabled: true,
+  },
+};
 
 // API Functions - Replace these with actual API calls to your database
 
@@ -424,4 +649,117 @@ export const register = async (email: string, password: string, name: string): P
 export const logout = async (): Promise<void> => {
   // TODO: Replace with actual API call
   return Promise.resolve();
+};
+
+// Menu Pages API
+export const getMenuPages = async (): Promise<MenuPage[]> => {
+  // TODO: Replace with actual API call
+  return Promise.resolve(mockMenuPages);
+};
+
+export const getMenuPageById = async (id: string): Promise<MenuPage | undefined> => {
+  // TODO: Replace with actual API call
+  return Promise.resolve(mockMenuPages.find(p => p.id === id));
+};
+
+export const createMenuPage = async (menuPage: Omit<MenuPage, 'id'>): Promise<MenuPage> => {
+  // TODO: Replace with actual API call
+  const newMenuPage = { ...menuPage, id: Date.now().toString() };
+  mockMenuPages.push(newMenuPage);
+  return Promise.resolve(newMenuPage);
+};
+
+export const updateMenuPage = async (id: string, menuPage: Partial<MenuPage>): Promise<MenuPage> => {
+  // TODO: Replace with actual API call
+  const index = mockMenuPages.findIndex(p => p.id === id);
+  if (index !== -1) {
+    mockMenuPages[index] = { ...mockMenuPages[index], ...menuPage };
+    return Promise.resolve(mockMenuPages[index]);
+  }
+  throw new Error('Menu page not found');
+};
+
+export const deleteMenuPage = async (id: string): Promise<void> => {
+  // TODO: Replace with actual API call
+  const index = mockMenuPages.findIndex(p => p.id === id);
+  if (index !== -1) {
+    mockMenuPages.splice(index, 1);
+  }
+  return Promise.resolve();
+};
+
+// Categories API
+export const getCategories = async (): Promise<Category[]> => {
+  // TODO: Replace with actual API call
+  return Promise.resolve(mockCategories);
+};
+
+export const createCategory = async (category: Omit<Category, 'id'>): Promise<Category> => {
+  // TODO: Replace with actual API call
+  const newCategory = { ...category, id: Date.now().toString() };
+  mockCategories.push(newCategory);
+  return Promise.resolve(newCategory);
+};
+
+export const updateCategory = async (id: string, category: Partial<Category>): Promise<Category> => {
+  // TODO: Replace with actual API call
+  const index = mockCategories.findIndex(c => c.id === id);
+  if (index !== -1) {
+    mockCategories[index] = { ...mockCategories[index], ...category };
+    return Promise.resolve(mockCategories[index]);
+  }
+  throw new Error('Category not found');
+};
+
+export const deleteCategory = async (id: string): Promise<void> => {
+  // TODO: Replace with actual API call
+  const index = mockCategories.findIndex(c => c.id === id);
+  if (index !== -1) {
+    mockCategories.splice(index, 1);
+  }
+  return Promise.resolve();
+};
+
+// Locations API
+export const getLocations = async (): Promise<Location[]> => {
+  // TODO: Replace with actual API call
+  return Promise.resolve(mockLocations);
+};
+
+export const createLocation = async (location: Omit<Location, 'id'>): Promise<Location> => {
+  // TODO: Replace with actual API call
+  const newLocation = { ...location, id: Date.now().toString() };
+  mockLocations.push(newLocation);
+  return Promise.resolve(newLocation);
+};
+
+export const updateLocation = async (id: string, location: Partial<Location>): Promise<Location> => {
+  // TODO: Replace with actual API call
+  const index = mockLocations.findIndex(l => l.id === id);
+  if (index !== -1) {
+    mockLocations[index] = { ...mockLocations[index], ...location };
+    return Promise.resolve(mockLocations[index]);
+  }
+  throw new Error('Location not found');
+};
+
+export const deleteLocation = async (id: string): Promise<void> => {
+  // TODO: Replace with actual API call
+  const index = mockLocations.findIndex(l => l.id === id);
+  if (index !== -1) {
+    mockLocations.splice(index, 1);
+  }
+  return Promise.resolve();
+};
+
+// Settings API
+export const getSettings = async (): Promise<Settings> => {
+  // TODO: Replace with actual API call
+  return Promise.resolve(mockSettings);
+};
+
+export const updateSettings = async (settings: Partial<Settings>): Promise<Settings> => {
+  // TODO: Replace with actual API call
+  const newSettings = { ...mockSettings, ...settings };
+  return Promise.resolve(newSettings);
 };

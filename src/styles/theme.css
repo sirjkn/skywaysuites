@@ -4,12 +4,13 @@
   --font-size: 16px;
   --font-family: 'Gothic A1', 'Century Gothic', sans-serif;
   
-  /* Skyway Suites Color Palette - Warm Earthy Tones */
+  /* Skyway Suites Color Palette - Charcoal Primary with Olive & Beige Accents */
   --warm-beige: #F5E6D3;
   --olive-green: #6B7F39;
   --charcoal-grey: #36454F;
   --light-beige: #FAF4EC;
   --dark-olive: #556230;
+  --dark-charcoal: #2C3E50;
   
   --background: #FDFCFA;
   --foreground: #36454F;
@@ -17,34 +18,34 @@
   --card-foreground: #36454F;
   --popover: #ffffff;
   --popover-foreground: #36454F;
-  --primary: #6B7F39;
+  --primary: #36454F;
   --primary-foreground: #ffffff;
-  --secondary: #F5E6D3;
-  --secondary-foreground: #36454F;
+  --secondary: #6B7F39;
+  --secondary-foreground: #ffffff;
   --muted: #F5E6D3;
-  --muted-foreground: #6B7F39;
-  --accent: #FAF4EC;
-  --accent-foreground: #36454F;
+  --muted-foreground: #36454F;
+  --accent: #6B7F39;
+  --accent-foreground: #ffffff;
   --destructive: #d4183d;
   --destructive-foreground: #ffffff;
-  --border: rgba(107, 127, 57, 0.2);
+  --border: rgba(54, 69, 79, 0.2);
   --input: transparent;
   --input-background: #FAF4EC;
   --switch-background: #cbced4;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: #6B7F39;
+  --ring: #36454F;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --radius: 0.5rem;
-  --sidebar: #F5E6D3;
-  --sidebar-foreground: #36454F;
+  --sidebar: #36454F;
+  --sidebar-foreground: #ffffff;
   --sidebar-primary: #6B7F39;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #FAF4EC;
+  --sidebar-accent: #F5E6D3;
   --sidebar-accent-foreground: #36454F;
   --sidebar-border: rgba(107, 127, 57, 0.2);
   --sidebar-ring: #6B7F39;
