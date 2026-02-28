@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { getMenuPages, MenuPage } from '../services/api';
 import { Navbar } from '../components/Navbar';
+import { WhatsAppButton } from '../components/WhatsAppButton';
 import { toast } from 'sonner';
 
 export const DynamicPage = () => {
@@ -100,6 +101,9 @@ export const DynamicPage = () => {
           </p>
         </div>
       </footer>
+
+      {/* WhatsApp Floating Button */}
+      <WhatsAppButton />
     </div>
   );
 };

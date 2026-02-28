@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Navbar } from '../components/Navbar';
 import { HeroSlider } from '../components/HeroSlider';
 import { PropertyCard } from '../components/PropertyCard';
+import { WhatsAppButton } from '../components/WhatsAppButton';
 import { getProperties, Property } from '../services/api';
 import { Mail, Phone, MapPin } from 'lucide-react';
 
@@ -11,6 +12,13 @@ export const HomePage = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('All');
   const [loading, setLoading] = useState(true);
+  const [whatsappNumber, setWhatsappNumber] = useState('+254712345678');
+  const [companyDetails, setCompanyDetails] = useState({
+    name: 'Skyway Suites',
+    email: 'info@skywaysuites.com',
+    phone: '+254 700 000 000',
+    address: 'Nairobi, Kenya',
+  });
 
   useEffect(() => {
     const loadProperties = async () => {
@@ -25,6 +33,61 @@ export const HomePage = () => {
     };
 
     loadProperties();
+  }, []);
+
+  useEffect(() => {
+    // Load WhatsApp settings
+    const loadWhatsAppSettings = () => {
+      const stored = localStorage.getItem('whatsappSettings');
+      if (stored) {
+        try {
+          const settings = JSON.parse(stored);
+          setWhatsappNumber(settings.phoneNumber || '+254712345678');
+        } catch (error) {
+          console.error('Error loading WhatsApp settings:', error);
+        }
+      }
+    };
+
+    loadWhatsAppSettings();
+
+    // Listen for settings changes
+    const handleSettingsChange = () => {
+      loadWhatsAppSettings();
+    };
+
+    window.addEventListener('whatsappSettingsChanged', handleSettingsChange);
+    return () => window.removeEventListener('whatsappSettingsChanged', handleSettingsChange);
+  }, []);
+
+  useEffect(() => {
+    // Load General Settings
+    const loadGeneralSettings = () => {
+      const stored = localStorage.getItem('generalSettings');
+      if (stored) {
+        try {
+          const settings = JSON.parse(stored);
+          setCompanyDetails({
+            name: settings.companyName || 'Skyway Suites',
+            email: settings.companyEmail || 'info@skywaysuites.com',
+            phone: settings.companyPhone || '+254 700 000 000',
+            address: settings.companyAddress || 'Nairobi, Kenya',
+          });
+        } catch (error) {
+          console.error('Error loading general settings:', error);
+        }
+      }
+    };
+
+    loadGeneralSettings();
+
+    // Listen for settings changes
+    const handleSettingsChange = () => {
+      loadGeneralSettings();
+    };
+
+    window.addEventListener('generalSettingsChanged', handleSettingsChange);
+    return () => window.removeEventListener('generalSettingsChanged', handleSettingsChange);
   }, []);
 
   const categories: CategoryFilter[] = ['All', 'Bedsitter', '1-Bedroom', '2-Bedroom', '3-Bedroom', '4-Bedroom'];
@@ -123,26 +186,21 @@ export const HomePage = () => {
                 something for everyone.
               </p>
               <div className="grid grid-cols-2 gap-6">
-                <div className="card-enhanced p-6 text-center">
-                  <h3 className="text-4xl font-bold bg-gradient-olive bg-clip-text text-transparent mb-2">500+</h3>
-                  <p className="text-[#36454F]/70 font-medium">Happy Clients</p>
+                <div className="card-enhanced p-8 text-center bg-white border-2 border-[#6B7F39]/30 hover:border-[#6B7F39] transition-all duration-300 hover:shadow-olive">
+                  <h3 className="text-6xl font-extrabold text-[#6B7F39] mb-3 drop-shadow-sm">500+</h3>
+                  <p className="text-[#36454F] font-semibold text-lg">Happy Clients</p>
                 </div>
-                <div className="card-enhanced p-6 text-center">
-                  <h3 className="text-4xl font-bold bg-gradient-olive bg-clip-text text-transparent mb-2">50+</h3>
-                  <p className="text-[#36454F]/70 font-medium">Properties</p>
+                <div className="card-enhanced p-8 text-center bg-white border-2 border-[#6B7F39]/30 hover:border-[#6B7F39] transition-all duration-300 hover:shadow-olive">
+                  <h3 className="text-6xl font-extrabold text-[#6B7F39] mb-3 drop-shadow-sm">50+</h3>
+                  <p className="text-[#36454F] font-semibold text-lg">Properties</p>
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 animate-slide-in-right">
+            <div className="animate-slide-in-right">
               <img
-                src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400"
-                alt="Property"
-                className="rounded-2xl shadow-olive w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
-              />
-              <img
-                src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400"
-                alt="Property"
-                className="rounded-2xl shadow-olive w-full h-64 object-cover mt-8 hover:scale-105 transition-transform duration-300"
+                src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800"
+                alt="Modern luxury property interior"
+                className="rounded-2xl shadow-2xl w-full h-[500px] object-cover hover:scale-105 transition-transform duration-500 border-4 border-white"
               />
             </div>
           </div>
@@ -168,7 +226,7 @@ export const HomePage = () => {
                 <Phone className="w-8 h-8 text-white" />
               </div>
               <h3 className="font-semibold text-xl text-[#36454F] mb-2">Phone</h3>
-              <p className="text-[#36454F]/70">+254 700 000 000</p>
+              <p className="text-[#36454F]/70">{companyDetails.phone}</p>
             </div>
 
             <div className="card-enhanced p-8 text-center group">
@@ -176,7 +234,7 @@ export const HomePage = () => {
                 <Mail className="w-8 h-8 text-white" />
               </div>
               <h3 className="font-semibold text-xl text-[#36454F] mb-2">Email</h3>
-              <p className="text-[#36454F]/70">info@skywaysuites.com</p>
+              <p className="text-[#36454F]/70">{companyDetails.email}</p>
             </div>
 
             <div className="card-enhanced p-8 text-center group">
@@ -184,7 +242,7 @@ export const HomePage = () => {
                 <MapPin className="w-8 h-8 text-white" />
               </div>
               <h3 className="font-semibold text-xl text-[#36454F] mb-2">Location</h3>
-              <p className="text-[#36454F]/70">Nairobi, Kenya</p>
+              <p className="text-[#36454F]/70">{companyDetails.address}</p>
             </div>
           </div>
         </div>
@@ -216,9 +274,18 @@ export const HomePage = () => {
             <div>
               <h4 className="font-semibold mb-3 text-[#F5E6D3]">Contact</h4>
               <ul className="space-y-2 text-sm text-[#BDC3C7]">
-                <li>+254 700 000 000</li>
-                <li>info@skywaysuites.com</li>
-                <li>Nairobi, Kenya</li>
+                <li>
+                  <a 
+                    href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent('Hello! I would like to inquire about your properties.')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-[#25D366] transition-colors inline-flex items-center gap-1"
+                  >
+                    <span>📱 WhatsApp: {whatsappNumber}</span>
+                  </a>
+                </li>
+                <li>{companyDetails.email}</li>
+                <li>{companyDetails.address}</li>
               </ul>
             </div>
             <div>
@@ -243,6 +310,9 @@ export const HomePage = () => {
           </div>
         </div>
       </footer>
+
+      {/* WhatsApp Floating Button */}
+      <WhatsAppButton />
     </div>
   );
 };

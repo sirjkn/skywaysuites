@@ -28,15 +28,19 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
         </div>
         
         {/* Available Badge */}
-        {property.available && (
-          <div className="absolute top-4 right-4 glass-effect text-[#6B7F39] px-4 py-1.5 rounded-full text-sm font-semibold shadow-sm">
+        {property.available ? (
+          <div className="absolute top-4 right-4 glass-effect text-[#16A34A] px-4 py-1.5 rounded-full text-sm font-semibold shadow-sm">
             Available
+          </div>
+        ) : (
+          <div className="absolute top-4 right-4 bg-red-500 text-white px-4 py-1.5 rounded-full text-sm font-semibold shadow-lg">
+            Unavailable
           </div>
         )}
       </div>
 
       {/* Content */}
-      <div className="p-6">
+      <div className="p-6 flex flex-col">
         {/* Title and Location */}
         <h3 className="font-semibold text-xl text-[#36454F] mb-2 group-hover:text-[#6B7F39] transition-colors">
           {property.name}
@@ -44,6 +48,21 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
         <div className="flex items-center gap-2 text-[#6B7F39] mb-4">
           <MapPin className="w-4 h-4" />
           <span className="text-sm font-medium">{property.location}</span>
+        </div>
+
+        {/* Availability Status - Fixed height to maintain alignment */}
+        <div className="h-[68px] mb-4">
+          {!property.available && property.availableAfter && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-700 font-medium">
+                Available after: {new Date(property.availableAfter).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Features */}
@@ -64,23 +83,18 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
           </div>
         </div>
 
-        {/* Description */}
-        <p className="text-sm text-[#36454F]/70 mb-4 line-clamp-2 leading-relaxed">
-          {property.description}
-        </p>
-
         {/* Price and Button */}
         <div className="flex items-center justify-between pt-4 border-t border-[#6B7F39]/10">
           <div>
-            <span className="text-3xl font-bold text-[#6B7F39]">${property.price}</span>
+            <span className="text-3xl font-bold text-black">Ksh {property.price}</span>
             <span className="text-sm text-[#36454F]/70 ml-1">/day</span>
           </div>
           <Button
             onClick={() => navigate(`/property/${property.id}`)}
-            className="bg-gradient-olive hover:shadow-olive text-white group/btn transition-all duration-300"
+            className="bg-gradient-charcoal hover:shadow-charcoal text-white group/btn transition-all duration-300"
           >
             <Eye className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform" />
-            View
+            View Details
           </Button>
         </div>
       </div>

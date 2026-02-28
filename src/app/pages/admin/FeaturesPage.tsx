@@ -87,7 +87,7 @@ export const FeaturesPage = () => {
           <h1 className="text-3xl font-bold text-[#36454F]">Features</h1>
           <p className="text-[#36454F]/70 mt-1">Manage property features and amenities</p>
         </div>
-        <Button onClick={handleAdd} className="bg-[#6B7F39] hover:bg-[#556230] text-white">
+        <Button onClick={handleAdd} className="bg-[#36454F] hover:bg-[#2C3E50] text-white">
           <Plus className="w-4 h-4 mr-2" />
           Add Feature
         </Button>
@@ -177,7 +177,7 @@ export const FeaturesPage = () => {
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" className="bg-[#6B7F39] hover:bg-[#556230] text-white">
+              <Button type="submit" className="bg-[#36454F] hover:bg-[#2C3E50] text-white">
                 {editingFeature ? 'Update' : 'Create'} Feature
               </Button>
             </div>

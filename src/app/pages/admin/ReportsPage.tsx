@@ -116,7 +116,7 @@ export const ReportsPage = () => {
             <DollarSign className="w-8 h-8 text-[#6B7F39]" />
           </div>
           <p className="text-3xl font-bold text-[#36454F]">
-            ${payments.reduce((sum, p) => sum + p.amount, 0).toLocaleString()}
+            Ksh {payments.reduce((sum, p) => sum + p.amount, 0).toLocaleString()}
           </p>
         </div>
       </div>
@@ -204,7 +204,7 @@ export const ReportsPage = () => {
                       <td className="px-6 py-4 text-[#36454F]">{property.name}</td>
                       <td className="px-6 py-4 text-[#36454F]">{property.category}</td>
                       <td className="px-6 py-4 text-[#36454F]">{property.location}</td>
-                      <td className="px-6 py-4 text-[#6B7F39] font-semibold">${property.price}</td>
+                      <td className="px-6 py-4 text-[#6B7F39] font-semibold">Ksh {property.price}</td>
                       <td className="px-6 py-4">
                         <span className={`px-3 py-1 rounded-full text-sm ${
                           property.available 
@@ -286,7 +286,7 @@ export const ReportsPage = () => {
                           {new Date(payment.date).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 text-[#36454F]">{customer?.name || 'N/A'}</td>
-                        <td className="px-6 py-4 text-[#6B7F39] font-semibold">${payment.amount}</td>
+                        <td className="px-6 py-4 text-[#6B7F39] font-semibold">Ksh {payment.amount}</td>
                         <td className="px-6 py-4 text-[#36454F]">{payment.method}</td>
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-sm ${
@@ -340,7 +340,7 @@ export const ReportsPage = () => {
                         <td className="px-6 py-4 text-[#36454F]">
                           {new Date(booking.checkOut).toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-4 text-[#6B7F39] font-semibold">${booking.totalPrice}</td>
+                        <td className="px-6 py-4 text-[#6B7F39] font-semibold">Ksh {booking.totalPrice}</td>
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-sm ${
                             booking.status === 'confirmed' 

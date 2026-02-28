@@ -96,7 +96,7 @@ export const LoginPage = () => {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#6B7F39] hover:bg-[#556230] text-white h-12 text-lg"
+              className="w-full bg-[#36454F] hover:bg-[#2C3E50] text-white h-12 text-lg"
             >
               {loading ? 'Logging in...' : 'Login'}
             </Button>

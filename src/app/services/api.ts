@@ -22,6 +22,7 @@ export interface Property {
   features: string[];
   images: PropertyImage[];
   available: boolean;
+  availableAfter?: string; // Date when property becomes available again
   createdAt: string;
 }
 
@@ -112,6 +113,12 @@ export interface Settings {
     primaryColor: string;
     secondaryColor: string;
     darkMode: boolean;
+  };
+  contactDetails: {
+    phoneNumber: string;
+    email: string;
+    message: string;
+    enabled: boolean;
   };
   sms: {
     provider: string;
@@ -265,11 +272,61 @@ const mockBookings: Booking[] = [
     id: '1',
     propertyId: '1',
     customerId: '1',
-    checkIn: '2026-03-01',
-    checkOut: '2026-03-07',
-    totalPrice: 315,
+    checkIn: '2026-02-26',
+    checkOut: '2026-03-15',
+    totalPrice: 765,
     status: 'confirmed',
     createdAt: '2026-02-20',
+  },
+  {
+    id: '2',
+    propertyId: '3',
+    customerId: '2',
+    checkIn: '2026-03-10',
+    checkOut: '2026-03-20',
+    totalPrice: 1200,
+    status: 'confirmed',
+    createdAt: '2026-02-22',
+  },
+  {
+    id: '3',
+    propertyId: '2',
+    customerId: '1',
+    checkIn: '2026-02-15',
+    checkOut: '2026-02-20',
+    totalPrice: 375,
+    status: 'confirmed',
+    createdAt: '2026-02-10',
+  },
+  {
+    id: '4',
+    propertyId: '4',
+    customerId: '2',
+    checkIn: '2026-03-05',
+    checkOut: '2026-03-12',
+    totalPrice: 1260,
+    status: 'pending',
+    createdAt: '2026-02-27',
+  },
+  {
+    id: '5',
+    propertyId: '5',
+    customerId: '1',
+    checkIn: '2026-03-15',
+    checkOut: '2026-03-22',
+    totalPrice: 1750,
+    status: 'pending',
+    createdAt: '2026-02-28',
+  },
+  {
+    id: '6',
+    propertyId: '6',
+    customerId: '2',
+    checkIn: '2026-03-01',
+    checkOut: '2026-03-08',
+    totalPrice: 770,
+    status: 'pending',
+    createdAt: '2026-02-28',
   },
 ];
 
@@ -460,6 +517,12 @@ const mockSettings: Settings = {
     secondaryColor: '#6c757d',
     darkMode: false,
   },
+  contactDetails: {
+    phoneNumber: '+254 700 000 000',
+    email: 'info@skywaysuites.com',
+    message: 'Your satisfaction is our priority. We strive to provide the best service possible.',
+    enabled: true,
+  },
   sms: {
     provider: 'Twilio',
     enabled: true,
@@ -468,17 +531,70 @@ const mockSettings: Settings = {
 
 // API Functions - Replace these with actual API calls to your database
 
+// Helper function to calculate property availability based on bookings
+const calculatePropertyAvailability = (propertyId: string): { available: boolean; availableAfter?: string } => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Reset time to midnight for accurate date comparison
+  
+  // Get all confirmed bookings for this property
+  const propertyBookings = mockBookings.filter(
+    booking => booking.propertyId === propertyId && booking.status === 'confirmed'
+  );
+  
+  // Find if there's an active booking (checkout date is in the future)
+  const activeBooking = propertyBookings.find(booking => {
+    const checkOutDate = new Date(booking.checkOut);
+    return checkOutDate >= today;
+  });
+  
+  if (activeBooking) {
+    // Property is currently booked
+    const checkOutDate = new Date(activeBooking.checkOut);
+    return {
+      available: false,
+      availableAfter: activeBooking.checkOut,
+    };
+  }
+  
+  // Property is available
+  return {
+    available: true,
+    availableAfter: undefined,
+  };
+};
+
 // Properties API
 export const getProperties = async (): Promise<Property[]> => {
   // TODO: Replace with actual API call
   // return fetch(`${BASE_URL}/properties`).then(res => res.json());
-  return Promise.resolve(mockProperties);
+  
+  // Calculate availability for each property based on bookings
+  const propertiesWithAvailability = mockProperties.map(property => {
+    const availability = calculatePropertyAvailability(property.id);
+    return {
+      ...property,
+      ...availability,
+    };
+  });
+  
+  return Promise.resolve(propertiesWithAvailability);
 };
 
 export const getPropertyById = async (id: string): Promise<Property | undefined> => {
   // TODO: Replace with actual API call
   // return fetch(`${BASE_URL}/properties/${id}`).then(res => res.json());
-  return Promise.resolve(mockProperties.find(p => p.id === id));
+  
+  const property = mockProperties.find(p => p.id === id);
+  
+  if (property) {
+    const availability = calculatePropertyAvailability(property.id);
+    return Promise.resolve({
+      ...property,
+      ...availability,
+    });
+  }
+  
+  return Promise.resolve(undefined);
 };
 
 export const createProperty = async (property: Omit<Property, 'id' | 'createdAt'>): Promise<Property> => {
@@ -597,6 +713,15 @@ export const createBooking = async (booking: Omit<Booking, 'id' | 'createdAt'>):
   };
   mockBookings.push(newBooking);
   return Promise.resolve(newBooking);
+};
+
+export const updateBookingStatus = async (id: string, status: 'pending' | 'confirmed' | 'cancelled'): Promise<Booking> => {
+  // TODO: Replace with actual API call
+  const booking = mockBookings.find(b => b.id === id);
+  if (booking) {
+    booking.status = status;
+  }
+  return Promise.resolve(booking!);
 };
 
 // Payments API

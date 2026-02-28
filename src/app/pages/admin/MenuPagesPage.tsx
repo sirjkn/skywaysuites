@@ -158,10 +158,10 @@ export const MenuPagesPage = () => {
         </div>
         <Button
           onClick={() => setShowForm(!showForm)}
-          className="bg-[#6B7F39] hover:bg-[#556230] text-white"
+          className="bg-[#36454F] hover:bg-[#2C3E50] text-white"
         >
           <Plus className="w-4 h-4 mr-2" />
-          Add Menu Page
+          {showForm ? 'Hide Form' : 'Add New Page'}
         </Button>
       </div>
 
@@ -278,7 +278,7 @@ export const MenuPagesPage = () => {
             <div className="flex gap-3 pt-2 border-t">
               <Button
                 type="submit"
-                className="bg-[#6B7F39] hover:bg-[#556230] text-white"
+                className="bg-[#36454F] hover:bg-[#2C3E50] text-white"
               >
                 {editingPage ? 'Update' : 'Create'}
               </Button>

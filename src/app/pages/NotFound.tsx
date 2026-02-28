@@ -19,7 +19,7 @@ export const NotFound = () => {
         </p>
         
         <Link to="/">
-          <Button className="bg-[#6B7F39] hover:bg-[#556230] text-white">
+          <Button className="bg-[#36454F] hover:bg-[#2C3E50] text-white">
             <Home className="w-4 h-4 mr-2" />
             Back to Home
           </Button>

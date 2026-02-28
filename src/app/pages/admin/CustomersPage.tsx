@@ -1,18 +1,21 @@
 import { useState, useEffect } from 'react';
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer, Customer } from '../../services/api';
-import { Plus, Edit, Trash2, User } from 'lucide-react';
+import { Plus, Edit, Trash2, User, Upload, X } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
 import { toast } from 'sonner';
+import { convertToWebP, isValidImageFile } from '../../utils/imageUtils';
 
 export const CustomersPage = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string>('');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -39,6 +42,7 @@ export const CustomersPage = () => {
   const resetForm = () => {
     setFormData({ name: '', email: '', phone: '', address: '', photo: '' });
     setEditingCustomer(null);
+    setPhotoPreview('');
   };
 
   const handleAdd = () => {
@@ -55,6 +59,7 @@ export const CustomersPage = () => {
       address: customer.address,
       photo: customer.photo || '',
     });
+    setPhotoPreview(customer.photo || '');
     setDialogOpen(true);
   };
 
@@ -89,6 +94,29 @@ export const CustomersPage = () => {
     }
   };
 
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    if (!isValidImageFile(file)) {
+      toast.error('Invalid image file. Please upload a valid image.');
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      const webPImage = await convertToWebP(file, { maxWidth: 800, maxHeight: 800, quality: 0.85 });
+      setFormData({ ...formData, photo: webPImage });
+      setPhotoPreview(webPImage);
+      toast.success('Photo uploaded and converted to WebP successfully!');
+    } catch (error) {
+      console.error('Error converting image to WebP:', error);
+      toast.error('Failed to upload photo. Please try again.');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   if (loading) {
     return <div className="text-center py-12">Loading...</div>;
   }
@@ -100,7 +128,7 @@ export const CustomersPage = () => {
           <h1 className="text-3xl font-bold text-[#36454F]">Customers</h1>
           <p className="text-[#36454F]/70 mt-1">Manage customer information</p>
         </div>
-        <Button onClick={handleAdd} className="bg-[#6B7F39] hover:bg-[#556230] text-white">
+        <Button onClick={handleAdd} className="bg-[#36454F] hover:bg-[#2C3E50] text-white">
           <Plus className="w-4 h-4 mr-2" />
           Add Customer
         </Button>
@@ -226,22 +254,57 @@ export const CustomersPage = () => {
             </div>
             
             <div>
-              <Label htmlFor="photo">Photo URL (optional)</Label>
-              <Input
-                id="photo"
-                type="url"
-                value={formData.photo}
-                onChange={(e) => setFormData({ ...formData, photo: e.target.value })}
-                placeholder="https://example.com/photo.jpg"
-                className="mt-1"
-              />
+              <Label htmlFor="photoUpload">Upload Photo (optional)</Label>
+              <div className="mt-1">
+                {photoPreview ? (
+                  <div className="relative inline-block">
+                    <img
+                      src={photoPreview}
+                      alt="Preview"
+                      className="w-32 h-32 rounded-lg object-cover border-2 border-[#6B7F39]/30"
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setPhotoPreview('');
+                        setFormData({ ...formData, photo: '' });
+                      }}
+                      variant="ghost"
+                      size="sm"
+                      className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-8 h-8 p-0"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <Input
+                      id="photoUpload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      disabled={uploadingPhoto}
+                      className="cursor-pointer"
+                    />
+                    {uploadingPhoto && (
+                      <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-md">
+                        <Upload className="w-5 h-5 text-[#6B7F39] animate-pulse" />
+                        <span className="ml-2 text-sm text-[#36454F]">Converting to WebP...</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <p className="text-xs text-[#36454F]/60 mt-1">
+                  Images will be automatically converted to WebP format and compressed for faster loading
+                </p>
+              </div>
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" className="bg-[#6B7F39] hover:bg-[#556230] text-white">
+              <Button type="submit" className="bg-[#36454F] hover:bg-[#2C3E50] text-white">
                 {editingCustomer ? 'Update' : 'Create'} Customer
               </Button>
             </div>

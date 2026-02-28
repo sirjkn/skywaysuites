@@ -116,10 +116,10 @@ export const LocationsModal = ({ open, onOpenChange, onUpdate }: LocationsModalP
           {!showForm && (
             <Button
               onClick={() => setShowForm(true)}
-              className="bg-[#6B7F39] hover:bg-[#556230] text-white w-full"
+              className="bg-[#36454F] hover:bg-[#2C3E50] text-white w-full"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add Location
+              Add New Location
             </Button>
           )}
 
@@ -167,7 +167,7 @@ export const LocationsModal = ({ open, onOpenChange, onUpdate }: LocationsModalP
                 <div className="flex gap-3">
                   <Button
                     type="submit"
-                    className="bg-[#6B7F39] hover:bg-[#556230] text-white"
+                    className="bg-[#36454F] hover:bg-[#2C3E50] text-white"
                   >
                     {editingLocation ? 'Update' : 'Create'}
                   </Button>

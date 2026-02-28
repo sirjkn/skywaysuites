@@ -42,20 +42,18 @@ export const Navbar = () => {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'glass-effect shadow-lg' : 'bg-white/95'
-      }`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-[#6B7F39] shadow-lg`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="bg-gradient-olive p-2.5 rounded-xl group-hover:shadow-charcoal transition-all duration-300 group-hover:scale-110">
+            <div className="bg-white/20 p-2.5 rounded-xl group-hover:bg-white/30 transition-all duration-300 group-hover:scale-110">
               <Building2 className="w-6 h-6 text-white" />
             </div>
             <div className="flex flex-col">
-              <span className="font-semibold text-xl text-[#36454F]">Skyway Suites</span>
-              <span className="text-xs text-[#6B7F39] font-medium">Your Perfect Stay</span>
+              <span className="font-semibold text-xl text-white">Skyway Suites</span>
+              <span className="text-xs text-white/90 font-medium">Your Perfect Stay</span>
             </div>
           </Link>
 
@@ -65,10 +63,10 @@ export const Navbar = () => {
               <Link
                 key={page.id}
                 to={page.path}
-                className="text-[#36454F] hover:text-[#6B7F39] transition-all duration-300 font-medium relative group/link"
+                className="text-white hover:!text-[#36454F] transition-all duration-300 font-medium relative group/link"
               >
                 {page.label}
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-olive group-hover/link:w-full transition-all duration-300"></span>
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#36454F] group-hover/link:w-full transition-all duration-300"></span>
               </Link>
             ))}
           </div>
@@ -77,13 +75,13 @@ export const Navbar = () => {
           <div className="hidden md:flex items-center gap-4">
             {isAuthenticated ? (
               <>
-                <div className="flex items-center gap-2 px-4 py-2 bg-gradient-warm rounded-xl shadow-sm">
-                  <User className="w-4 h-4 text-[#6B7F39]" />
-                  <span className="text-sm text-[#36454F]">{user?.name}</span>
+                <div className="flex items-center gap-2 px-4 py-2 bg-[#36454F] rounded-xl shadow-sm">
+                  <User className="w-4 h-4 text-white" />
+                  <span className="text-sm text-white">{user?.name}</span>
                 </div>
                 {isAdmin && (
                   <Link to="/admin">
-                    <Button variant="outline" className="border-[#6B7F39] text-[#6B7F39] hover:bg-[#6B7F39] hover:text-white">
+                    <Button variant="outline" className="border-[#36454F] bg-[#36454F] text-white hover:bg-[#2C3E50] hover:border-[#2C3E50]">
                       <Settings className="w-4 h-4 mr-2" />
                       Admin
                     </Button>
@@ -92,7 +90,7 @@ export const Navbar = () => {
                 <Button
                   onClick={handleLogout}
                   variant="ghost"
-                  className="text-[#36454F] hover:text-[#6B7F39]"
+                  className="text-white hover:text-[#36454F] hover:bg-white/10"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
                   Logout
@@ -101,12 +99,12 @@ export const Navbar = () => {
             ) : (
               <>
                 <Link to="/login">
-                  <Button variant="ghost" className="text-[#36454F] hover:text-[#6B7F39]">
+                  <Button variant="ghost" className="text-white hover:text-[#36454F] hover:bg-white/10">
                     Login
                   </Button>
                 </Link>
                 <Link to="/register">
-                  <Button className="bg-[#6B7F39] hover:bg-[#556230] text-white">
+                  <Button className="bg-white hover:bg-white/90 text-[#6B7F39] font-semibold">
                     Register
                   </Button>
                 </Link>
@@ -117,7 +115,7 @@ export const Navbar = () => {
           {/* Mobile menu button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-[#F5E6D3] text-[#36454F] transition-colors"
+            className="md:hidden p-2 rounded-lg hover:bg-white/20 text-white transition-colors"
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -126,14 +124,14 @@ export const Navbar = () => {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-[#6B7F39]/20 bg-white">
+        <div className="md:hidden border-t border-white/20 bg-[#6B7F39]">
           <div className="px-4 py-4 space-y-3">
             {menuPages.map(page => (
               <Link
                 key={page.id}
                 to={page.path}
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-4 py-3 rounded-lg text-[#36454F] hover:bg-[#F5E6D3] transition-colors"
+                className="block px-4 py-3 rounded-lg text-white hover:bg-white/20 transition-colors"
               >
                 {page.label}
               </Link>
@@ -141,17 +139,17 @@ export const Navbar = () => {
 
             {isAuthenticated ? (
               <>
-                <div className="px-4 py-3 bg-[#F5E6D3] rounded-lg">
+                <div className="px-4 py-3 bg-white/20 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-[#6B7F39]" />
-                    <span className="text-sm text-[#36454F]">{user?.name}</span>
+                    <User className="w-4 h-4 text-white" />
+                    <span className="text-sm text-white">{user?.name}</span>
                   </div>
                 </div>
                 {isAdmin && (
                   <Link
                     to="/admin"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="block px-4 py-3 rounded-lg text-[#36454F] hover:bg-[#F5E6D3] transition-colors"
+                    className="block px-4 py-3 rounded-lg text-white hover:bg-white/20 transition-colors"
                   >
                     <Settings className="w-4 h-4 inline mr-2" />
                     Admin Dashboard
@@ -159,7 +157,7 @@ export const Navbar = () => {
                 )}
                 <button
                   onClick={handleLogout}
-                  className="w-full text-left px-4 py-3 rounded-lg text-[#36454F] hover:bg-[#F5E6D3] transition-colors"
+                  className="w-full text-left px-4 py-3 rounded-lg text-white hover:bg-white/20 transition-colors"
                 >
                   <LogOut className="w-4 h-4 inline mr-2" />
                   Logout
@@ -170,14 +168,14 @@ export const Navbar = () => {
                 <Link
                   to="/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block px-4 py-3 rounded-lg text-[#36454F] hover:bg-[#F5E6D3] transition-colors"
+                  className="block px-4 py-3 rounded-lg text-white hover:bg-white/20 transition-colors"
                 >
                   Login
                 </Link>
                 <Link
                   to="/register"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block px-4 py-3 rounded-lg bg-[#6B7F39] text-white hover:bg-[#556230] transition-colors text-center"
+                  className="block px-4 py-3 rounded-lg bg-white text-[#6B7F39] font-semibold hover:bg-white/90 transition-colors text-center"
                 >
                   Register
                 </Link>

@@ -9,7 +9,8 @@ import {
   LogOut,
   Menu,
   X,
-  FileStack
+  FileStack,
+  Calendar
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -34,6 +35,7 @@ export const AdminLayout = () => {
     { path: '/admin', label: 'Properties', icon: Building2 },
     { path: '/admin/features', label: 'Features', icon: Star },
     { path: '/admin/customers', label: 'Customers', icon: Users },
+    { path: '/admin/bookings', label: 'Bookings', icon: Calendar },
     { path: '/admin/menu-pages', label: 'Menu Pages', icon: FileStack },
     { path: '/admin/reports', label: 'Reports', icon: FileText },
     { path: '/admin/settings', label: 'Settings', icon: Settings },

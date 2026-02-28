@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Calendar, FileText, CreditCard } from 'lucide-react';
+import { X, Calendar, FileText, CreditCard, Smartphone } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
 import { getSettings, PaymentMethod } from '../services/api';
@@ -23,6 +23,7 @@ export const BookingModal = ({
   const [toDate, setToDate] = useState('');
   const [additionalInfo, setAdditionalInfo] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
+  const [mpesaNumber, setMpesaNumber] = useState('');
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -91,11 +92,26 @@ export const BookingModal = ({
       return;
     }
 
+    // Check if M-Pesa is selected and validate phone number
+    const selectedMethod = paymentMethods.find(pm => pm.id === paymentMethod);
+    if (selectedMethod?.id === 'mpesa') {
+      if (!mpesaNumber) {
+        toast.error('Please enter your Mpesa number');
+        return;
+      }
+      // Validate Kenyan phone number format
+      const phoneRegex = /^(?:254|\+254|0)?(7[0-9]{8}|1[0-9]{8})$/;
+      if (!phoneRegex.test(mpesaNumber)) {
+        toast.error('Please enter a valid Kenyan phone number');
+        return;
+      }
+    }
+
     setIsSubmitting(true);
 
     // Simulate booking process
     setTimeout(() => {
-      toast.success('Booking request submitted successfully!');
+      toast.success('Booking request submitted! Awaiting admin approval.');
       console.log({
         propertyId,
         propertyName,
@@ -105,6 +121,8 @@ export const BookingModal = ({
         totalPrice,
         additionalInfo,
         paymentMethod,
+        mpesaNumber,
+        status: 'pending', // All bookings start as pending
       });
       setIsSubmitting(false);
       onClose();
@@ -113,6 +131,7 @@ export const BookingModal = ({
       setToDate('');
       setAdditionalInfo('');
       setPaymentMethod('');
+      setMpesaNumber('');
     }, 1500);
   };
 
@@ -123,7 +142,7 @@ export const BookingModal = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-olive p-6 rounded-t-2xl">
+        <div className="sticky top-0 bg-gradient-charcoal p-6 rounded-t-2xl">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-white">Book Property</h2>
             <button
@@ -209,6 +228,28 @@ export const BookingModal = ({
             </select>
           </div>
 
+          {/* Mpesa Number */}
+          {paymentMethods.find(pm => pm.id === paymentMethod)?.type === 'mpesa' && (
+            <div className="animate-fade-in">
+              <label htmlFor="mpesaNumber" className="flex items-center gap-2 text-[#36454F] mb-2">
+                <Smartphone className="w-4 h-4 text-[#6B7F39]" />
+                Mpesa Number
+              </label>
+              <input
+                type="text"
+                id="mpesaNumber"
+                value={mpesaNumber}
+                onChange={(e) => setMpesaNumber(e.target.value)}
+                placeholder="e.g., 0712345678 or 254712345678"
+                className="w-full px-4 py-3 rounded-lg border border-[#6B7F39]/20 bg-input-background focus:outline-none focus:ring-2 focus:ring-[#6B7F39]/30 transition-all"
+                required
+              />
+              <p className="text-xs text-[#36454F]/60 mt-1">
+                Enter your M-Pesa registered phone number
+              </p>
+            </div>
+          )}
+
           {/* Booking Summary */}
           {nights > 0 && (
             <div className="bg-gradient-warm p-4 rounded-lg border border-[#6B7F39]/20">
@@ -216,16 +257,16 @@ export const BookingModal = ({
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-[#36454F]/70">Price per night</span>
-                  <span className="text-[#36454F] font-medium">${propertyPrice}</span>
+                  <span className="text-[#36454F] font-medium">Ksh {propertyPrice}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#36454F]/70">Number of nights</span>
-                  <span className="text-[#36454F] font-medium">{nights}</span>
+                  <span className="text-[#36454F] font-medium">{nights || 0}</span>
                 </div>
-                <div className="divider-gradient"></div>
+                <div className="h-px bg-[#6B7F39]/20 my-2"></div>
                 <div className="flex justify-between">
                   <span className="text-[#36454F] font-semibold">Total</span>
-                  <span className="text-[#6B7F39] text-xl font-bold">${totalPrice}</span>
+                  <span className="text-[#6B7F39] text-xl font-bold">Ksh {totalPrice}</span>
                 </div>
               </div>
             </div>
@@ -244,7 +285,7 @@ export const BookingModal = ({
             </Button>
             <Button
               type="submit"
-              className="flex-1 bg-gradient-olive text-white hover:shadow-olive"
+              className="flex-1 bg-gradient-charcoal text-white hover:shadow-charcoal"
               disabled={isSubmitting}
             >
               {isSubmitting ? (

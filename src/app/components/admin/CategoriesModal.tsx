@@ -125,10 +125,10 @@ export const CategoriesModal = ({ open, onOpenChange, onUpdate }: CategoriesModa
           {!showForm && (
             <Button
               onClick={() => setShowForm(true)}
-              className="bg-[#6B7F39] hover:bg-[#556230] text-white w-full"
+              className="bg-[#36454F] hover:bg-[#2C3E50] text-white w-full"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add Category
+              Add New Category
             </Button>
           )}
 
@@ -178,7 +178,7 @@ export const CategoriesModal = ({ open, onOpenChange, onUpdate }: CategoriesModa
                 <div className="flex gap-3">
                   <Button
                     type="submit"
-                    className="bg-[#6B7F39] hover:bg-[#556230] text-white"
+                    className="bg-[#36454F] hover:bg-[#2C3E50] text-white"
                   >
                     {editingCategory ? 'Update' : 'Create'}
                   </Button>

@@ -304,7 +304,7 @@ export const PropertiesPage = () => {
           <Button 
             onClick={() => setCategoriesModalOpen(true)}
             variant="outline"
-            className="border-[#6B7F39] text-[#6B7F39] hover:bg-[#6B7F39] hover:text-white"
+            className="border-[#36454F] text-[#36454F] hover:bg-[#36454F] hover:text-white"
           >
             <Tag className="w-4 h-4 mr-2" />
             Categories
@@ -312,12 +312,12 @@ export const PropertiesPage = () => {
           <Button 
             onClick={() => setLocationsModalOpen(true)}
             variant="outline"
-            className="border-[#6B7F39] text-[#6B7F39] hover:bg-[#6B7F39] hover:text-white"
+            className="border-[#36454F] text-[#36454F] hover:bg-[#36454F] hover:text-white"
           >
             <MapPin className="w-4 h-4 mr-2" />
             Locations
           </Button>
-          <Button onClick={handleAdd} className="bg-[#6B7F39] hover:bg-[#556230] text-white">
+          <Button onClick={handleAdd} className="bg-[#36454F] hover:bg-[#2C3E50] text-white">
             <Plus className="w-4 h-4 mr-2" />
             Add Property
           </Button>
@@ -355,7 +355,7 @@ export const PropertiesPage = () => {
                   </td>
                   <td className="px-6 py-4 text-sm text-[#2C3E50]">{property.category}</td>
                   <td className="px-6 py-4 text-sm text-[#2C3E50]">{property.location}</td>
-                  <td className="px-6 py-4 text-sm font-semibold text-[#6B7F39]">${property.price}</td>
+                  <td className="px-6 py-4 text-sm font-semibold text-[#6B7F39]">Ksh {property.price}</td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       property.available 
@@ -444,15 +444,14 @@ export const PropertiesPage = () => {
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="price">Price per Day ($)</Label>
+                <Label htmlFor="price">Price per Day (Ksh)</Label>
                 <Input
                   id="price"
                   type="number"
-                  step="0.01"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  placeholder="e.g., 1500"
                   required
-                  className="mt-1"
                 />
               </div>
               
@@ -653,7 +652,7 @@ export const PropertiesPage = () => {
               >
                 Cancel
               </Button>
-              <Button type="submit" className="bg-[#6B7F39] hover:bg-[#556230] text-white">
+              <Button type="submit" className="bg-[#36454F] hover:bg-[#2C3E50] text-white">
                 {editingProperty ? 'Update Property' : 'Create Property'}
               </Button>
             </div>

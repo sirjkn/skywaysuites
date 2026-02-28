@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router';
 import { getPropertyById, getFeatures, Property, Feature } from '../services/api';
 import { Navbar } from '../components/Navbar';
 import { BookingModal } from '../components/BookingModal';
+import { WhatsAppButton } from '../components/WhatsAppButton';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   X, 
@@ -22,10 +23,12 @@ export const PropertyDetailPage = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [property, setProperty] = useState<Property | null>(null);
-  const [features, setFeatures] = useState<Feature[]>([]);
+  const [propertyFeatures, setPropertyFeatures] = useState<Feature[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [whatsappNumber, setWhatsappNumber] = useState('+254712345678');
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   useEffect(() => {
     const loadProperty = async () => {
@@ -39,7 +42,7 @@ export const PropertyDetailPage = () => {
         
         if (propertyData) {
           setProperty(propertyData);
-          setFeatures(featuresData);
+          setPropertyFeatures(featuresData.filter(f => propertyData.features.includes(f.id)));
         } else {
           toast.error('Property not found');
           navigate('/');
@@ -54,6 +57,31 @@ export const PropertyDetailPage = () => {
 
     loadProperty();
   }, [id, navigate]);
+
+  useEffect(() => {
+    // Load WhatsApp settings
+    const loadWhatsAppSettings = () => {
+      const stored = localStorage.getItem('whatsappSettings');
+      if (stored) {
+        try {
+          const settings = JSON.parse(stored);
+          setWhatsappNumber(settings.phoneNumber || '+254712345678');
+        } catch (error) {
+          console.error('Error loading WhatsApp settings:', error);
+        }
+      }
+    };
+
+    loadWhatsAppSettings();
+
+    // Listen for settings changes
+    const handleSettingsChange = () => {
+      loadWhatsAppSettings();
+    };
+
+    window.addEventListener('whatsappSettingsChanged', handleSettingsChange);
+    return () => window.removeEventListener('whatsappSettingsChanged', handleSettingsChange);
+  }, []);
 
   const handleBookProperty = () => {
     if (!isAuthenticated) {
@@ -76,6 +104,27 @@ export const PropertyDetailPage = () => {
     }
   };
 
+  const openLightbox = (index: number) => {
+    setCurrentImageIndex(index);
+    setIsLightboxOpen(true);
+  };
+
+  const closeLightbox = () => {
+    setIsLightboxOpen(false);
+  };
+
+  useEffect(() => {
+    // Prevent scrolling when lightbox is open
+    if (isLightboxOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isLightboxOpen]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FDFCFA]">
@@ -93,8 +142,6 @@ export const PropertyDetailPage = () => {
   if (!property) {
     return null;
   }
-
-  const propertyFeatures = features.filter(f => property.features.includes(f.id));
 
   return (
     <div className="min-h-screen bg-[#FDFCFA]">
@@ -132,37 +179,34 @@ export const PropertyDetailPage = () => {
             alt={property.name}
             className="w-full h-full object-cover"
           />
-          
-          {property.images.length > 1 && (
-            <>
-              <button
-                onClick={prevImage}
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 backdrop-blur-sm text-white p-3 rounded-full transition-all"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-              <button
-                onClick={nextImage}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 backdrop-blur-sm text-white p-3 rounded-full transition-all"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </button>
+        </div>
 
-              {/* Image Indicators */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                {property.images.map((_, index) => (
+        {/* Image Thumbnails */}
+        {property.images.length > 1 && (
+          <div className="bg-white border-b border-[#6B7F39]/20 py-4">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                {property.images.map((image, index) => (
                   <button
                     key={index}
-                    onClick={() => setCurrentImageIndex(index)}
-                    className={`w-2 h-2 rounded-full transition-all ${
-                      index === currentImageIndex ? 'w-8 bg-[#6B7F39]' : 'bg-white/50'
+                    onClick={() => openLightbox(index)}
+                    className={`flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden transition-all border-2 ${
+                      index === currentImageIndex 
+                        ? 'border-[#6B7F39] shadow-lg scale-105' 
+                        : 'border-transparent hover:border-[#6B7F39]/50 opacity-70 hover:opacity-100'
                     }`}
-                  />
+                  >
+                    <img
+                      src={image.url}
+                      alt={`${property.name} - Image ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
                 ))}
               </div>
-            </>
-          )}
-        </div>
+            </div>
+          </div>
+        )}
 
         {/* Content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -171,13 +215,17 @@ export const PropertyDetailPage = () => {
             <div className="lg:col-span-2 space-y-8">
               {/* Title and Category */}
               <div>
-                <div className="flex items-center gap-3 mb-3">
+                <div className="flex items-center gap-3 mb-3 flex-wrap">
                   <span className="bg-[#6B7F39] text-white px-4 py-1 rounded-full text-sm font-medium">
                     {property.category}
                   </span>
-                  {property.available && (
-                    <span className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-medium">
+                  {property.available ? (
+                    <span className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-semibold">
                       Available
+                    </span>
+                  ) : (
+                    <span className="bg-red-500 text-white px-4 py-1 rounded-full text-sm font-semibold">
+                      Unavailable
                     </span>
                   )}
                 </div>
@@ -188,6 +236,22 @@ export const PropertyDetailPage = () => {
                   <MapPin className="w-5 h-5" />
                   <span className="text-lg">{property.location}</span>
                 </div>
+
+                {/* Availability Notice */}
+                {!property.available && property.availableAfter && (
+                  <div className="mt-4 p-4 bg-red-50 border-l-4 border-red-500 rounded">
+                    <p className="text-red-700 font-semibold">
+                      This property is currently booked. It will be available after{' '}
+                      <span className="font-bold">
+                        {new Date(property.availableAfter).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
+                      </span>
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Quick Stats */}
@@ -251,7 +315,7 @@ export const PropertyDetailPage = () => {
 
                 <Button
                   onClick={handleBookProperty}
-                  className="w-full bg-[#6B7F39] hover:bg-[#556230] text-white text-lg py-6 mb-4"
+                  className="w-full bg-[#36454F] hover:bg-[#2C3E50] text-white text-lg py-6 mb-4"
                   disabled={!property.available}
                 >
                   {property.available ? 'Book Property' : 'Not Available'}
@@ -272,9 +336,14 @@ export const PropertyDetailPage = () => {
 
                 <div className="mt-6 p-4 bg-[#F5E6D3]/30 rounded-lg">
                   <p className="text-sm text-[#36454F]/80 text-center">
-                    Need help? Contact us at <br />
-                    <a href="tel:+254700000000" className="text-[#6B7F39] font-medium">
-                      +254 700 000 000
+                    Need help? <br />
+                    <a 
+                      href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent('Hello! I would like to inquire about ' + property.name)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#25D366] hover:text-[#128C7E] font-semibold inline-flex items-center gap-1 transition-colors"
+                    >
+                      WhatsApp us at {whatsappNumber}
                     </a>
                   </p>
                 </div>
@@ -303,6 +372,103 @@ export const PropertyDetailPage = () => {
           propertyId={property.id}
         />
       )}
+
+      {/* Image Lightbox Modal */}
+      {isLightboxOpen && (
+        <div 
+          className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center"
+          onClick={closeLightbox}
+        >
+          {/* Close Button */}
+          <button
+            onClick={closeLightbox}
+            className="absolute top-4 right-4 z-[110] bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white p-3 rounded-full transition-all"
+            aria-label="Close lightbox"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          {/* Image Counter */}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[110] bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-full">
+            <span className="text-sm font-medium">
+              {currentImageIndex + 1} / {property.images.length}
+            </span>
+          </div>
+
+          {/* Previous Button */}
+          {property.images.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                prevImage();
+              }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-[110] bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white p-4 rounded-full transition-all"
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="w-8 h-8" />
+            </button>
+          )}
+
+          {/* Main Image */}
+          <div 
+            className="relative w-full h-full flex items-center justify-center p-4 md:p-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={property.images[currentImageIndex]?.url}
+              alt={`${property.name} - Image ${currentImageIndex + 1}`}
+              className="max-w-full max-h-full object-contain rounded-lg"
+            />
+          </div>
+
+          {/* Next Button */}
+          {property.images.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                nextImage();
+              }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-[110] bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white p-4 rounded-full transition-all"
+              aria-label="Next image"
+            >
+              <ChevronRight className="w-8 h-8" />
+            </button>
+          )}
+
+          {/* Thumbnail Navigation */}
+          {property.images.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[110] max-w-full">
+              <div className="bg-black/50 backdrop-blur-sm rounded-full px-4 py-3">
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide max-w-[90vw] md:max-w-2xl">
+                  {property.images.map((image, index) => (
+                    <button
+                      key={index}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentImageIndex(index);
+                      }}
+                      className={`flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden transition-all border-2 ${
+                        index === currentImageIndex
+                          ? 'border-[#6B7F39] scale-110 shadow-lg'
+                          : 'border-white/30 hover:border-white/60 opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      <img
+                        src={image.url}
+                        alt={`Thumbnail ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* WhatsApp Floating Button */}
+      <WhatsAppButton />
     </div>
   );
 };
