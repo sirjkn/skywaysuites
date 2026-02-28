@@ -248,25 +248,6 @@ const mockFeatures: Feature[] = [
   { id: '7', name: 'Garden', icon: 'Trees' },
 ];
 
-const mockCustomers: Customer[] = [
-  {
-    id: '1',
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+254712345678',
-    address: '123 Main St, Nairobi',
-    createdAt: '2026-01-10',
-  },
-  {
-    id: '2',
-    name: 'Jane Smith',
-    email: 'jane.smith@example.com',
-    phone: '+254723456789',
-    address: '456 Oak Ave, Nairobi',
-    createdAt: '2026-01-12',
-  },
-];
-
 const mockBookings: Booking[] = [
   {
     id: '1',
@@ -664,93 +645,81 @@ export const deleteFeature = async (id: string): Promise<void> => {
 
 // Customers API
 export const getCustomers = async (): Promise<Customer[]> => {
-  // TODO: Replace with actual API call
-  return Promise.resolve(mockCustomers);
+  const { storageService } = await import('./storage');
+  return storageService.getCustomers();
 };
 
 export const createCustomer = async (customer: Omit<Customer, 'id' | 'createdAt'>): Promise<Customer> => {
-  // TODO: Replace with actual API call
+  const { storageService } = await import('./storage');
   const newCustomer = {
     ...customer,
     id: Date.now().toString(),
     createdAt: new Date().toISOString(),
   };
-  mockCustomers.push(newCustomer);
-  return Promise.resolve(newCustomer);
+  return storageService.createCustomer(newCustomer);
 };
 
 export const updateCustomer = async (id: string, customer: Partial<Customer>): Promise<Customer> => {
-  // TODO: Replace with actual API call
-  const index = mockCustomers.findIndex(c => c.id === id);
-  if (index !== -1) {
-    mockCustomers[index] = { ...mockCustomers[index], ...customer };
-    return Promise.resolve(mockCustomers[index]);
-  }
-  throw new Error('Customer not found');
+  const { storageService } = await import('./storage');
+  return storageService.updateCustomer(id, customer);
 };
 
 export const deleteCustomer = async (id: string): Promise<void> => {
-  // TODO: Replace with actual API call
-  const index = mockCustomers.findIndex(c => c.id === id);
-  if (index !== -1) {
-    mockCustomers.splice(index, 1);
-  }
-  return Promise.resolve();
+  const { storageService } = await import('./storage');
+  return storageService.deleteCustomer(id);
 };
 
 // Bookings API
 export const getBookings = async (): Promise<Booking[]> => {
-  // TODO: Replace with actual API call
-  return Promise.resolve(mockBookings);
+  const { storageService } = await import('./storage');
+  return storageService.getBookings();
 };
 
 export const createBooking = async (booking: Omit<Booking, 'id' | 'createdAt'>): Promise<Booking> => {
-  // TODO: Replace with actual API call
+  const { storageService } = await import('./storage');
   const newBooking = {
     ...booking,
     id: Date.now().toString(),
     createdAt: new Date().toISOString(),
   };
-  mockBookings.push(newBooking);
-  return Promise.resolve(newBooking);
+  return storageService.createBooking(newBooking);
 };
 
 export const updateBookingStatus = async (id: string, status: 'pending' | 'confirmed' | 'cancelled'): Promise<Booking> => {
-  // TODO: Replace with actual API call
-  const booking = mockBookings.find(b => b.id === id);
-  if (booking) {
-    booking.status = status;
-  }
-  return Promise.resolve(booking!);
+  const { storageService } = await import('./storage');
+  return storageService.updateBooking(id, { status });
 };
 
 // Payments API
 export const getPayments = async (): Promise<Payment[]> => {
-  // TODO: Replace with actual API call
-  return Promise.resolve(mockPayments);
+  const { storageService } = await import('./storage');
+  return storageService.getPayments();
 };
 
 export const createPayment = async (payment: Omit<Payment, 'id'>): Promise<Payment> => {
-  // TODO: Replace with actual API call
+  const { storageService } = await import('./storage');
   const newPayment = { ...payment, id: Date.now().toString() };
-  mockPayments.push(newPayment);
-  return Promise.resolve(newPayment);
+  return storageService.createPayment(newPayment);
 };
 
 // Authentication API
 export const login = async (email: string, password: string): Promise<User> => {
   // TODO: Replace with actual API call to your authentication system
-  // return fetch(`${BASE_URL}/auth/login`, { method: 'POST', body: JSON.stringify({ email, password }) }).then(res => res.json());\n  
+  // return fetch(`${BASE_URL}/auth/login`, { method: 'POST', body: JSON.stringify({ email, password }) }).then(res => res.json());\\n  
   // Dynamic import to avoid circular dependency
   const { storageService } = await import('./storage');
   
   // Check against app_users using storage service
   const appUsers = await storageService.getAppUsers();
   
+  console.log('Login attempt for:', email);
+  console.log('Available users:', appUsers.map((u: any) => ({ email: u.email, role: u.role })));
+  
   // Find user with matching email and password
   const user = appUsers.find((u: any) => u.email === email && u.password === password);
   
   if (user) {
+    console.log('Login successful for:', email, 'Role:', user.role);
     return Promise.resolve({
       id: user.id,
       email: user.email,
@@ -759,13 +728,14 @@ export const login = async (email: string, password: string): Promise<User> => {
     });
   }
   
+  console.error('Login failed - Invalid credentials for:', email);
   // If not found, throw error
   throw new Error('Invalid email or password');
 };
 
-export const register = async (email: string, password: string, name: string): Promise<User> => {
+export const register = async (email: string, password: string, name: string, phone: string): Promise<User> => {
   // TODO: Replace with actual API call to your authentication system
-  // return fetch(`${BASE_URL}/auth/register`, { method: 'POST', body: JSON.stringify({ email, password, name }) }).then(res => res.json());
+  // return fetch(`${BASE_URL}/auth/register`, { method: 'POST', body: JSON.stringify({ email, password, name, phone }) }).then(res => res.json());
   
   // Dynamic import to avoid circular dependency
   const { storageService } = await import('./storage');
@@ -784,7 +754,7 @@ export const register = async (email: string, password: string, name: string): P
     id: customerId,
     name,
     email,
-    phone: '',
+    phone,
     address: '',
     createdAt: new Date().toISOString(),
   });
@@ -794,6 +764,7 @@ export const register = async (email: string, password: string, name: string): P
     id: newCustomer.id,
     name,
     email,
+    phone,
     password, // In production, this should be hashed
     role: 'customer',
     createdAt: new Date().toISOString(),

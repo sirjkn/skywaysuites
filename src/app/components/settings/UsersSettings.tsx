@@ -73,6 +73,7 @@ const DEFAULT_ADMIN: AppUser = {
   id: 'admin-default',
   name: 'Administrator',
   email: 'admin@123.com',
+  phone: '+254 700 000 000',
   password: '123',
   role: 'admin',
   createdAt: new Date().toISOString(),
@@ -86,6 +87,7 @@ export const UsersSettings: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
     password: '',
     role: 'customer',
   });
@@ -97,25 +99,15 @@ export const UsersSettings: React.FC = () => {
   const loadUsers = async () => {
     try {
       const loadedUsers = await storageService.getAppUsers();
-      if (loadedUsers && loadedUsers.length > 0) {
-        setUsers(loadedUsers);
-      } else {
-        // Initialize with default admin if no users exist
-        const defaultUsers = [DEFAULT_ADMIN];
-        setUsers(defaultUsers);
-        await storageService.createAppUser(DEFAULT_ADMIN);
-      }
+      setUsers(loadedUsers);
     } catch (error) {
       console.error('Error loading users:', error);
-      // Initialize with default admin if error
-      const defaultUsers = [DEFAULT_ADMIN];
-      setUsers(defaultUsers);
-      await storageService.createAppUser(DEFAULT_ADMIN);
+      setUsers([]);
     }
   };
 
   const handleAddUser = async () => {
-    if (!formData.name || !formData.email || !formData.password) {
+    if (!formData.name || !formData.email || !formData.phone || !formData.password) {
       toast.error('Please fill in all fields');
       return;
     }
@@ -130,6 +122,7 @@ export const UsersSettings: React.FC = () => {
       id: Date.now().toString(),
       name: formData.name,
       email: formData.email,
+      phone: formData.phone,
       password: formData.password,
       role: formData.role,
       createdAt: new Date().toISOString(),
@@ -140,7 +133,7 @@ export const UsersSettings: React.FC = () => {
       setUsers([...users, newUser]);
       toast.success('User added successfully');
       setShowAddModal(false);
-      setFormData({ name: '', email: '', password: '', role: 'customer' });
+      setFormData({ name: '', email: '', phone: '', password: '', role: 'customer' });
     } catch (error) {
       console.error('Error adding user:', error);
       toast.error('Failed to add user. Please try again.');
@@ -148,7 +141,7 @@ export const UsersSettings: React.FC = () => {
   };
 
   const handleEditUser = async () => {
-    if (!editingUser || !formData.name || !formData.email || !formData.password) {
+    if (!editingUser || !formData.name || !formData.email || !formData.phone || !formData.password) {
       toast.error('Please fill in all fields');
       return;
     }
@@ -163,20 +156,21 @@ export const UsersSettings: React.FC = () => {
       await storageService.updateAppUser(editingUser.id, {
         name: formData.name,
         email: formData.email,
+        phone: formData.phone,
         password: formData.password,
         role: formData.role,
       });
 
       const updatedUsers = users.map(u =>
         u.id === editingUser.id
-          ? { ...u, name: formData.name, email: formData.email, password: formData.password, role: formData.role }
+          ? { ...u, name: formData.name, email: formData.email, phone: formData.phone, password: formData.password, role: formData.role }
           : u
       );
 
       setUsers(updatedUsers);
       toast.success('User updated successfully');
       setEditingUser(null);
-      setFormData({ name: '', email: '', password: '', role: 'customer' });
+      setFormData({ name: '', email: '', phone: '', password: '', role: 'customer' });
     } catch (error) {
       console.error('Error updating user:', error);
       toast.error('Failed to update user. Please try again.');
@@ -208,6 +202,7 @@ export const UsersSettings: React.FC = () => {
     setFormData({
       name: user.name,
       email: user.email,
+      phone: user.phone,
       password: user.password,
       role: user.role,
     });
@@ -216,7 +211,7 @@ export const UsersSettings: React.FC = () => {
   const closeModal = () => {
     setShowAddModal(false);
     setEditingUser(null);
-    setFormData({ name: '', email: '', password: '', role: 'customer' });
+    setFormData({ name: '', email: '', phone: '', password: '', role: 'customer' });
   };
 
   const getRolePermissions = (roleId: string) => {
@@ -390,6 +385,18 @@ export const UsersSettings: React.FC = () => {
                   value={formData.email}
                   onChange={e => setFormData({ ...formData, email: e.target.value })}
                   placeholder="john@example.com"
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="userPhone">Phone Number</Label>
+                <Input
+                  id="userPhone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="+254 700 000 000"
                   className="mt-1"
                 />
               </div>

@@ -219,6 +219,17 @@ CREATE TABLE IF NOT EXISTS slider_settings (
   "updatedAt" TIMESTAMP DEFAULT NOW()
 );
 
+-- App Users Table (for authentication and role management)
+CREATE TABLE IF NOT EXISTS app_users (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  phone TEXT NOT NULL,
+  password TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'customer',
+  "createdAt" TIMESTAMP DEFAULT NOW()
+);
+
 -- Enable Row Level Security (RLS) - Optional but recommended
 ALTER TABLE properties ENABLE ROW LEVEL SECURITY;
 ALTER TABLE features ENABLE ROW LEVEL SECURITY;
@@ -232,6 +243,7 @@ ALTER TABLE sms_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payment_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE whatsapp_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE slider_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app_users ENABLE ROW LEVEL SECURITY;
 
 -- Create policies to allow public access (adjust based on your needs)
 CREATE POLICY "Allow public read access" ON properties FOR SELECT USING (true);
@@ -270,6 +282,11 @@ CREATE POLICY "Allow public access" ON sms_settings FOR ALL USING (true);
 CREATE POLICY "Allow public access" ON payment_settings FOR ALL USING (true);
 CREATE POLICY "Allow public access" ON whatsapp_settings FOR ALL USING (true);
 CREATE POLICY "Allow public access" ON slider_settings FOR ALL USING (true);
+
+CREATE POLICY "Allow public read access" ON app_users FOR SELECT USING (true);
+CREATE POLICY "Allow public insert" ON app_users FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update" ON app_users FOR UPDATE USING (true);
+CREATE POLICY "Allow public delete" ON app_users FOR DELETE USING (true);
   `.trim();
 };
 
@@ -290,6 +307,7 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
       bookings: 0,
       payments: 0,
       menuPages: 0,
+      appUsers: 0,
       generalSettings: 0,
       themeSettings: 0,
       smsSettings: 0,
@@ -298,13 +316,19 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
       sliderSettings: 0,
     };
 
+    // Use Promise.allSettled for parallel execution with error handling
+    const migrations = [];
+
     // Migrate Properties
     const propertiesData = localStorage.getItem('properties');
     if (propertiesData) {
       const properties: Property[] = JSON.parse(propertiesData);
       if (properties.length > 0) {
-        const { error } = await supabase.from('properties').upsert(properties);
-        if (!error) results.properties = properties.length;
+        migrations.push(
+          supabase.from('properties').upsert(properties).then(({ error, count }) => {
+            if (!error) results.properties = properties.length;
+          })
+        );
       }
     }
 
@@ -313,8 +337,11 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
     if (featuresData) {
       const features: Feature[] = JSON.parse(featuresData);
       if (features.length > 0) {
-        const { error } = await supabase.from('features').upsert(features);
-        if (!error) results.features = features.length;
+        migrations.push(
+          supabase.from('features').upsert(features).then(({ error }) => {
+            if (!error) results.features = features.length;
+          })
+        );
       }
     }
 
@@ -323,8 +350,11 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
     if (customersData) {
       const customers: Customer[] = JSON.parse(customersData);
       if (customers.length > 0) {
-        const { error } = await supabase.from('customers').upsert(customers);
-        if (!error) results.customers = customers.length;
+        migrations.push(
+          supabase.from('customers').upsert(customers).then(({ error }) => {
+            if (!error) results.customers = customers.length;
+          })
+        );
       }
     }
 
@@ -333,8 +363,11 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
     if (bookingsData) {
       const bookings: Booking[] = JSON.parse(bookingsData);
       if (bookings.length > 0) {
-        const { error } = await supabase.from('bookings').upsert(bookings);
-        if (!error) results.bookings = bookings.length;
+        migrations.push(
+          supabase.from('bookings').upsert(bookings).then(({ error }) => {
+            if (!error) results.bookings = bookings.length;
+          })
+        );
       }
     }
 
@@ -343,8 +376,11 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
     if (paymentsData) {
       const payments: Payment[] = JSON.parse(paymentsData);
       if (payments.length > 0) {
-        const { error } = await supabase.from('payments').upsert(payments);
-        if (!error) results.payments = payments.length;
+        migrations.push(
+          supabase.from('payments').upsert(payments).then(({ error }) => {
+            if (!error) results.payments = payments.length;
+          })
+        );
       }
     }
 
@@ -353,8 +389,24 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
     if (menuPagesData) {
       const menuPages: MenuPage[] = JSON.parse(menuPagesData);
       if (menuPages.length > 0) {
-        const { error } = await supabase.from('menu_pages').upsert(menuPages);
-        if (!error) results.menuPages = menuPages.length;
+        migrations.push(
+          supabase.from('menu_pages').upsert(menuPages).then(({ error }) => {
+            if (!error) results.menuPages = menuPages.length;
+          })
+        );
+      }
+    }
+
+    // Migrate App Users
+    const appUsersData = localStorage.getItem('appUsers');
+    if (appUsersData) {
+      const appUsers = JSON.parse(appUsersData);
+      if (appUsers.length > 0) {
+        migrations.push(
+          supabase.from('app_users').upsert(appUsers).then(({ error }) => {
+            if (!error) results.appUsers = appUsers.length;
+          })
+        );
       }
     }
 
@@ -362,55 +414,70 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
     const generalSettingsData = localStorage.getItem('generalSettings');
     if (generalSettingsData) {
       const generalSettings = JSON.parse(generalSettingsData);
-      const { error } = await supabase.from('general_settings').upsert({
-        id: 'default',
-        ...generalSettings,
-      });
-      if (!error) results.generalSettings = 1;
+      migrations.push(
+        supabase.from('general_settings').upsert({
+          id: 'default',
+          ...generalSettings,
+        }).then(({ error }) => {
+          if (!error) results.generalSettings = 1;
+        })
+      );
     }
 
     // Migrate Theme Settings (if exists)
     const themeSettingsData = localStorage.getItem('themeSettings');
     if (themeSettingsData) {
       const themeSettings = JSON.parse(themeSettingsData);
-      const { error } = await supabase.from('theme_settings').upsert({
-        id: 'default',
-        ...themeSettings,
-      });
-      if (!error) results.themeSettings = 1;
+      migrations.push(
+        supabase.from('theme_settings').upsert({
+          id: 'default',
+          ...themeSettings,
+        }).then(({ error }) => {
+          if (!error) results.themeSettings = 1;
+        })
+      );
     }
 
     // Migrate SMS Settings (if exists)
     const smsSettingsData = localStorage.getItem('smsSettings');
     if (smsSettingsData) {
       const smsSettings = JSON.parse(smsSettingsData);
-      const { error } = await supabase.from('sms_settings').upsert({
-        id: 'default',
-        ...smsSettings,
-      });
-      if (!error) results.smsSettings = 1;
+      migrations.push(
+        supabase.from('sms_settings').upsert({
+          id: 'default',
+          ...smsSettings,
+        }).then(({ error }) => {
+          if (!error) results.smsSettings = 1;
+        })
+      );
     }
 
     // Migrate Payment Settings (if exists)
     const paymentSettingsData = localStorage.getItem('paymentSettings');
     if (paymentSettingsData) {
       const paymentSettings = JSON.parse(paymentSettingsData);
-      const { error } = await supabase.from('payment_settings').upsert({
-        id: 'default',
-        ...paymentSettings,
-      });
-      if (!error) results.paymentSettings = 1;
+      migrations.push(
+        supabase.from('payment_settings').upsert({
+          id: 'default',
+          ...paymentSettings,
+        }).then(({ error }) => {
+          if (!error) results.paymentSettings = 1;
+        })
+      );
     }
 
     // Migrate WhatsApp Settings
     const whatsappSettingsData = localStorage.getItem('contactDetailsSettings');
     if (whatsappSettingsData) {
       const whatsappSettings = JSON.parse(whatsappSettingsData);
-      const { error } = await supabase.from('whatsapp_settings').upsert({
-        id: 'default',
-        ...whatsappSettings,
-      });
-      if (!error) results.whatsappSettings = 1;
+      migrations.push(
+        supabase.from('whatsapp_settings').upsert({
+          id: 'default',
+          ...whatsappSettings,
+        }).then(({ error }) => {
+          if (!error) results.whatsappSettings = 1;
+        })
+      );
     }
 
     // Migrate Slider Settings
@@ -422,10 +489,23 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
           ...slide,
           order: index,
         }));
-        const { error } = await supabase.from('slider_settings').upsert(slides);
-        if (!error) results.sliderSettings = slides.length;
+        migrations.push(
+          supabase.from('slider_settings').upsert(slides).then(({ error }) => {
+            if (!error) results.sliderSettings = slides.length;
+          })
+        );
       }
     }
+
+    // Execute all migrations in parallel with 30 second timeout
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Migration timeout after 30 seconds')), 30000)
+    );
+
+    await Promise.race([
+      Promise.allSettled(migrations),
+      timeoutPromise
+    ]);
 
     return {
       success: true,
@@ -436,7 +516,7 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
     console.error('Migration error:', error);
     return {
       success: false,
-      message: 'Failed to migrate data',
+      message: error instanceof Error ? error.message : 'Failed to migrate data',
       details: error,
     };
   }
@@ -475,6 +555,10 @@ export const syncSupabaseToLocalStorage = async (): Promise<MigrationResult> => 
     // Sync Menu Pages
     const { data: menuPages } = await supabase.from('menu_pages').select('*');
     if (menuPages) localStorage.setItem('menuPages', JSON.stringify(menuPages));
+
+    // Sync App Users
+    const { data: appUsers } = await supabase.from('app_users').select('*');
+    if (appUsers) localStorage.setItem('appUsers', JSON.stringify(appUsers));
 
     // Sync General Settings
     const { data: generalSettings } = await supabase.from('general_settings').select('*').eq('id', 'default').single();

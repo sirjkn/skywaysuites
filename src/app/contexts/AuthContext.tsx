@@ -4,7 +4,7 @@ import { User, login as apiLogin, register as apiRegister, logout as apiLogout }
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  register: (email: string, password: string, name: string, phone: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   isAdmin: boolean;
@@ -29,8 +29,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('skyway_user', JSON.stringify(user));
   };
 
-  const register = async (email: string, password: string, name: string) => {
-    const user = await apiRegister(email, password, name);
+  const register = async (email: string, password: string, name: string, phone: string) => {
+    const user = await apiRegister(email, password, name, phone);
     setUser(user);
     localStorage.setItem('skyway_user', JSON.stringify(user));
   };

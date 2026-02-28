@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
-import { Building2, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { Building2, Mail, Lock, User, Eye, EyeOff, Phone } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -13,6 +13,7 @@ export const RegisterPage = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
     password: '',
     confirmPassword: '',
   });
@@ -29,7 +30,7 @@ export const RegisterPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+    if (!formData.name || !formData.email || !formData.phone || !formData.password || !formData.confirmPassword) {
       toast.error('Please fill in all fields');
       return;
     }
@@ -46,11 +47,12 @@ export const RegisterPage = () => {
 
     setLoading(true);
     try {
-      await register(formData.email, formData.password, formData.name);
+      await register(formData.email, formData.password, formData.name, formData.phone);
       toast.success('Registration successful! Welcome to Skyway Suites');
       navigate('/', { replace: true });
-    } catch (error) {
-      toast.error('Registration failed. Please try again.');
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Registration failed. Please try again.';
+      toast.error(errorMessage);
       console.error('Registration error:', error);
     } finally {
       setLoading(false);
@@ -101,6 +103,22 @@ export const RegisterPage = () => {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="you@example.com"
+                  className="pl-10 h-12 border-[#6B7F39]/20 focus:border-[#6B7F39]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="phone" className="text-[#36454F]">Phone Number</Label>
+              <div className="relative mt-2">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6B7F39]" />
+                <Input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="+254 700 000 000"
                   className="pl-10 h-12 border-[#6B7F39]/20 focus:border-[#6B7F39]"
                 />
               </div>
