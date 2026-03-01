@@ -303,6 +303,24 @@ export class StorageService {
     return this.getPaymentsLocal();
   }
 
+  async createPayment(payment: Payment): Promise<Payment> {
+    // Always save to local first
+    const localPayment = this.createPaymentLocal(payment);
+    
+    // Then sync to Supabase if connected
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        await this.createPaymentRemote(payment);
+        console.log('✅ Payment synced to Supabase');
+      } catch (error) {
+        console.error('❌ Error syncing payment to Supabase:', error);
+      }
+    }
+    
+    return localPayment;
+  }
+
   // Menu Pages
   async getMenuPages(): Promise<MenuPage[]> {
     if (this.storageType === 'remote') {
@@ -387,15 +405,18 @@ export class StorageService {
     // Always save to local first
     const localUser = this.createAppUserLocal(user);
     
-    // Then sync to remote if connected
-    if (this.storageType === 'remote') {
+    // Then sync to Supabase if connected
+    const supabase = getSupabaseClient();
+    if (supabase) {
       try {
         await this.createAppUserRemote(user);
+        console.log('✅ App user synced to Supabase');
       } catch (error) {
-        console.error('Error syncing app user to remote:', error);
+        console.error('❌ Error syncing app user to Supabase:', error);
         // Continue even if remote sync fails
       }
     }
+    
     return localUser;
   }
 
@@ -403,15 +424,18 @@ export class StorageService {
     // Always update local first
     const localUser = this.updateAppUserLocal(id, user);
     
-    // Then sync to remote if connected
-    if (this.storageType === 'remote') {
+    // Then sync to Supabase if connected
+    const supabase = getSupabaseClient();
+    if (supabase) {
       try {
         await this.updateAppUserRemote(id, user);
+        console.log('✅ App user update synced to Supabase');
       } catch (error) {
-        console.error('Error syncing app user update to remote:', error);
+        console.error('❌ Error syncing app user update to Supabase:', error);
         // Continue even if remote sync fails
       }
     }
+    
     return localUser;
   }
 
@@ -419,12 +443,14 @@ export class StorageService {
     // Always delete from local first
     this.deleteAppUserLocal(id);
     
-    // Then sync to remote if connected
-    if (this.storageType === 'remote') {
+    // Then sync to Supabase if connected
+    const supabase = getSupabaseClient();
+    if (supabase) {
       try {
         await this.deleteAppUserRemote(id);
+        console.log('✅ App user deletion synced to Supabase');
       } catch (error) {
-        console.error('Error syncing app user deletion to remote:', error);
+        console.error('❌ Error syncing app user deletion to Supabase:', error);
         // Continue even if remote sync fails
       }
     }
@@ -552,6 +578,13 @@ export class StorageService {
   private getPaymentsLocal(): Payment[] {
     const stored = localStorage.getItem('payments');
     return stored ? JSON.parse(stored) : [];
+  }
+
+  private createPaymentLocal(payment: Payment): Payment {
+    const payments = this.getPaymentsLocal();
+    payments.push(payment);
+    localStorage.setItem('payments', JSON.stringify(payments));
+    return payment;
   }
 
   private getMenuPagesLocal(): MenuPage[] {
@@ -795,6 +828,15 @@ export class StorageService {
     const { data, error } = await supabase.from('payments').select('*');
     if (error) throw error;
     return data || [];
+  }
+
+  private async createPaymentRemote(payment: Payment): Promise<Payment> {
+    const supabase = getSupabaseClient();
+    if (!supabase) throw new Error('Supabase not connected');
+
+    const { data, error } = await supabase.from('payments').insert(payment).select().single();
+    if (error) throw error;
+    return data;
   }
 
   private async getMenuPagesRemote(): Promise<MenuPage[]> {

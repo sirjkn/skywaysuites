@@ -106,18 +106,8 @@ export const LoginPage = () => {
             <p className="text-[#36454F]/70">
               Don't have an account?{' '}
               <Link to="/register" className="text-[#6B7F39] hover:text-[#556230] font-medium">
-                Register here
+                Sign up here
               </Link>
-            </p>
-          </div>
-
-          <div className="mt-6 pt-6 border-t border-[#6B7F39]/10">
-            <p className="text-sm text-center text-[#36454F]/70">
-              Demo: Use any email/password to login
-              <br />
-              <span className="text-xs">
-                (email with 'admin' for admin access)
-              </span>
             </p>
           </div>
         </div>

@@ -38,7 +38,7 @@ export const HomePage = () => {
   useEffect(() => {
     // Load WhatsApp settings
     const loadWhatsAppSettings = () => {
-      const stored = localStorage.getItem('whatsappSettings');
+      const stored = localStorage.getItem('contactDetailsSettings');
       if (stored) {
         try {
           const settings = JSON.parse(stored);

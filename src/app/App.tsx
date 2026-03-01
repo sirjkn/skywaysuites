@@ -6,8 +6,11 @@ import { initializeApp } from './services/initialization';
 
 export default function App() {
   useEffect(() => {
-    // Initialize app with default data
-    initializeApp();
+    // Initialize app with default data (non-blocking)
+    initializeApp().catch((error) => {
+      console.error('Failed to initialize app:', error);
+      // App will continue even if initialization fails
+    });
   }, []);
 
   return (

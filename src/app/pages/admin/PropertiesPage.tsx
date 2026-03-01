@@ -463,11 +463,17 @@ export const PropertiesPage = () => {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map(category => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name} ({category.bedrooms} {category.bedrooms === 1 ? 'bedroom' : 'bedrooms'})
-                      </SelectItem>
-                    ))}
+                    {categories && categories.length > 0 ? (
+                      categories.map(category => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name} ({category.bedrooms} {category.bedrooms === 1 ? 'bedroom' : 'bedrooms'})
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="px-2 py-4 text-sm text-center text-[#7F8C8D]">
+                        No categories available. Click "Categories" button to add one.
+                      </div>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -496,11 +502,17 @@ export const PropertiesPage = () => {
                     <SelectValue placeholder="Select location" />
                   </SelectTrigger>
                   <SelectContent>
-                    {locations.map(location => (
-                      <SelectItem key={location.id} value={location.id}>
-                        {location.name}, {location.city}
-                      </SelectItem>
-                    ))}
+                    {locations && locations.length > 0 ? (
+                      locations.map(location => (
+                        <SelectItem key={location.id} value={location.id}>
+                          {location.name}, {location.city}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="px-2 py-4 text-sm text-center text-[#7F8C8D]">
+                        No locations available. Click "Locations" button to add one.
+                      </div>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

@@ -1,6 +1,6 @@
 import { storageService } from './storage';
 import { initializeSupabase } from './supabase';
-import { syncSupabaseToLocalStorage } from './migrations';
+import { syncSupabaseToLocalStorage, type MigrationResult } from './migrations';
 
 export interface AppUser {
   id: string;
@@ -81,13 +81,23 @@ export const initializeApp = async (): Promise<void> => {
     initializeSupabase(supabaseConfig);
     console.log('✅ Supabase connected successfully');
     
-    // Pull data from Supabase to localStorage
+    // Pull data from Supabase to localStorage (non-blocking)
     console.log('🔄 Pulling latest data from Supabase...');
-    const syncResult = await syncSupabaseToLocalStorage();
-    if (syncResult.success) {
-      console.log('✅ Data synced from Supabase to localStorage');
-    } else {
-      console.warn('⚠️ Failed to sync from Supabase:', syncResult.message);
+    try {
+      const syncResult = await Promise.race([
+        syncSupabaseToLocalStorage(),
+        new Promise<MigrationResult>((resolve) => 
+          setTimeout(() => resolve({ success: false, message: 'Sync timeout after 10 seconds' }), 10000)
+        )
+      ]);
+      
+      if (syncResult.success) {
+        console.log('✅ Data synced from Supabase to localStorage');
+      } else {
+        console.warn('⚠️ Failed to sync from Supabase (app will continue with local data):', syncResult.message);
+      }
+    } catch (syncError) {
+      console.warn('⚠️ Error during sync (app will continue with local data):', syncError);
     }
 
     // Get existing app users
@@ -102,12 +112,16 @@ export const initializeApp = async (): Promise<void> => {
       console.log('Default admin user created successfully');
     }
   } catch (error) {
-    console.error('Error initializing app:', error);
+    console.error('Error initializing app (app will continue):', error);
     // Try to create default admin even if there's an error
     try {
-      await storageService.createAppUser(DEFAULT_ADMIN);
+      const users = await storageService.getAppUsers();
+      const adminExists = users.some((u: AppUser) => u.id === 'admin-default');
+      if (!adminExists) {
+        await storageService.createAppUser(DEFAULT_ADMIN);
+      }
     } catch (createError) {
-      console.error('Failed to create default admin:', createError);
+      console.error('Failed to create default admin (app will continue):', createError);
     }
   }
 };

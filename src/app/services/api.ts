@@ -128,201 +128,13 @@ export interface Settings {
 }
 
 // Mock Data - Replace with your database calls
-const mockProperties: Property[] = [
-  {
-    id: '1',
-    name: 'Sunset View Bedsitter',
-    price: 45,
-    location: 'Downtown, Nairobi',
-    bedrooms: 0,
-    bathrooms: 1,
-    area: 350,
-    category: 'Bedsitter',
-    description: 'Cozy bedsitter with modern amenities and stunning sunset views. Perfect for young professionals.',
-    features: ['1', '2', '3'],
-    images: [
-      { id: '1', url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800', isDefault: true },
-      { id: '2', url: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800', isDefault: false },
-    ],
-    available: true,
-    createdAt: '2026-01-15',
-  },
-  {
-    id: '2',
-    name: 'Modern 1-Bedroom Apartment',
-    price: 75,
-    location: 'Westlands, Nairobi',
-    bedrooms: 1,
-    bathrooms: 1,
-    area: 550,
-    category: '1-Bedroom',
-    description: 'Elegant 1-bedroom apartment with contemporary design and premium finishes.',
-    features: ['1', '2', '3', '4'],
-    images: [
-      { id: '3', url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800', isDefault: true },
-      { id: '4', url: 'https://images.unsplash.com/photo-1556020685-ae41abfc9365?w=800', isDefault: false },
-    ],
-    available: true,
-    createdAt: '2026-01-20',
-  },
-  {
-    id: '3',
-    name: 'Spacious 2-Bedroom Suite',
-    price: 120,
-    location: 'Kilimani, Nairobi',
-    bedrooms: 2,
-    bathrooms: 2,
-    area: 850,
-    category: '2-Bedroom',
-    description: 'Beautiful 2-bedroom suite with ample space and modern kitchen. Family-friendly.',
-    features: ['1', '2', '3', '4', '5'],
-    images: [
-      { id: '5', url: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800', isDefault: true },
-      { id: '6', url: 'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800', isDefault: false },
-    ],
-    available: true,
-    createdAt: '2026-02-01',
-  },
-  {
-    id: '4',
-    name: 'Luxury 3-Bedroom Penthouse',
-    price: 180,
-    location: 'Karen, Nairobi',
-    bedrooms: 3,
-    bathrooms: 3,
-    area: 1200,
-    category: '3-Bedroom',
-    description: 'Luxurious penthouse with panoramic views and top-tier amenities.',
-    features: ['1', '2', '3', '4', '5', '6'],
-    images: [
-      { id: '7', url: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800', isDefault: true },
-      { id: '8', url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800', isDefault: false },
-    ],
-    available: true,
-    createdAt: '2026-02-10',
-  },
-  {
-    id: '5',
-    name: 'Executive 4-Bedroom Villa',
-    price: 250,
-    location: 'Runda, Nairobi',
-    bedrooms: 4,
-    bathrooms: 4,
-    area: 2000,
-    category: '4-Bedroom',
-    description: 'Grand 4-bedroom villa with private garden, pool, and premium security.',
-    features: ['1', '2', '3', '4', '5', '6', '7'],
-    images: [
-      { id: '9', url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800', isDefault: true },
-      { id: '10', url: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=800', isDefault: false },
-    ],
-    available: true,
-    createdAt: '2026-02-15',
-  },
-  {
-    id: '6',
-    name: 'Garden View 2-Bedroom',
-    price: 110,
-    location: 'Lavington, Nairobi',
-    bedrooms: 2,
-    bathrooms: 2,
-    area: 800,
-    category: '2-Bedroom',
-    description: 'Serene 2-bedroom with beautiful garden views and peaceful surroundings.',
-    features: ['1', '2', '3', '5'],
-    images: [
-      { id: '11', url: 'https://images.unsplash.com/photo-1502672023488-70e25813eb80?w=800', isDefault: true },
-      { id: '12', url: 'https://images.unsplash.com/photo-1501876725168-00c445821c9e?w=800', isDefault: false },
-    ],
-    available: true,
-    createdAt: '2026-02-18',
-  },
-];
+const mockProperties: Property[] = [];
 
-const mockFeatures: Feature[] = [
-  { id: '1', name: 'WiFi', icon: 'Wifi' },
-  { id: '2', name: 'Parking', icon: 'Car' },
-  { id: '3', name: 'Air Conditioning', icon: 'Wind' },
-  { id: '4', name: 'Swimming Pool', icon: 'Waves' },
-  { id: '5', name: 'Gym', icon: 'Dumbbell' },
-  { id: '6', name: 'Security', icon: 'ShieldCheck' },
-  { id: '7', name: 'Garden', icon: 'Trees' },
-];
+const mockFeatures: Feature[] = [];
 
-const mockBookings: Booking[] = [
-  {
-    id: '1',
-    propertyId: '1',
-    customerId: '1',
-    checkIn: '2026-02-26',
-    checkOut: '2026-03-15',
-    totalPrice: 765,
-    status: 'confirmed',
-    createdAt: '2026-02-20',
-  },
-  {
-    id: '2',
-    propertyId: '3',
-    customerId: '2',
-    checkIn: '2026-03-10',
-    checkOut: '2026-03-20',
-    totalPrice: 1200,
-    status: 'confirmed',
-    createdAt: '2026-02-22',
-  },
-  {
-    id: '3',
-    propertyId: '2',
-    customerId: '1',
-    checkIn: '2026-02-15',
-    checkOut: '2026-02-20',
-    totalPrice: 375,
-    status: 'confirmed',
-    createdAt: '2026-02-10',
-  },
-  {
-    id: '4',
-    propertyId: '4',
-    customerId: '2',
-    checkIn: '2026-03-05',
-    checkOut: '2026-03-12',
-    totalPrice: 1260,
-    status: 'pending',
-    createdAt: '2026-02-27',
-  },
-  {
-    id: '5',
-    propertyId: '5',
-    customerId: '1',
-    checkIn: '2026-03-15',
-    checkOut: '2026-03-22',
-    totalPrice: 1750,
-    status: 'pending',
-    createdAt: '2026-02-28',
-  },
-  {
-    id: '6',
-    propertyId: '6',
-    customerId: '2',
-    checkIn: '2026-03-01',
-    checkOut: '2026-03-08',
-    totalPrice: 770,
-    status: 'pending',
-    createdAt: '2026-02-28',
-  },
-];
+const mockBookings: Booking[] = [];
 
-const mockPayments: Payment[] = [
-  {
-    id: '1',
-    bookingId: '1',
-    customerId: '1',
-    amount: 315,
-    method: 'M-Pesa',
-    status: 'completed',
-    date: '2026-02-20',
-  },
-];
+const mockPayments: Payment[] = [];
 
 const mockMenuPages: MenuPage[] = [
   {
@@ -514,13 +326,21 @@ const mockSettings: Settings = {
 // API Functions - Replace these with actual API calls to your database
 
 // Helper function to calculate property availability based on bookings
-const calculatePropertyAvailability = (propertyId: string): { available: boolean; availableAfter?: string } => {
+const calculatePropertyAvailability = (propertyId: string, bookings: Booking[]): { available: boolean; availableAfter?: string } => {
+  // Handle edge case where bookings might be undefined or null
+  if (!bookings || !Array.isArray(bookings)) {
+    return {
+      available: true,
+      availableAfter: undefined,
+    };
+  }
+  
   const today = new Date();
   today.setHours(0, 0, 0, 0); // Reset time to midnight for accurate date comparison
   
   // Get all confirmed bookings for this property
-  const propertyBookings = mockBookings.filter(
-    booking => booking.propertyId === propertyId && booking.status === 'confirmed'
+  const propertyBookings = bookings.filter(
+    booking => booking && booking.propertyId === propertyId && booking.status === 'confirmed'
   );
   
   // Find if there's an active booking (checkout date is in the future)
@@ -547,101 +367,93 @@ const calculatePropertyAvailability = (propertyId: string): { available: boolean
 
 // Properties API
 export const getProperties = async (): Promise<Property[]> => {
-  // TODO: Replace with actual API call
-  // return fetch(`${BASE_URL}/properties`).then(res => res.json());
-  
-  // Calculate availability for each property based on bookings
-  const propertiesWithAvailability = mockProperties.map(property => {
-    const availability = calculatePropertyAvailability(property.id);
-    return {
-      ...property,
-      ...availability,
-    };
-  });
-  
-  return Promise.resolve(propertiesWithAvailability);
+  try {
+    const { storageService } = await import('./storage');
+    const properties = await storageService.getProperties();
+    
+    // Calculate availability for each property based on bookings
+    const bookings = await storageService.getBookings();
+    
+    const propertiesWithAvailability = properties.map(property => {
+      const availability = calculatePropertyAvailability(property.id, bookings);
+      return {
+        ...property,
+        ...availability,
+      };
+    });
+    
+    return propertiesWithAvailability;
+  } catch (error) {
+    console.error('Error in getProperties:', error);
+    return [];
+  }
 };
 
 export const getPropertyById = async (id: string): Promise<Property | undefined> => {
-  // TODO: Replace with actual API call
-  // return fetch(`${BASE_URL}/properties/${id}`).then(res => res.json());
-  
-  const property = mockProperties.find(p => p.id === id);
-  
-  if (property) {
-    const availability = calculatePropertyAvailability(property.id);
-    return Promise.resolve({
-      ...property,
-      ...availability,
-    });
+  try {
+    const { storageService } = await import('./storage');
+    const property = await storageService.getPropertyById(id);
+    
+    if (property) {
+      const bookings = await storageService.getBookings();
+      const availability = calculatePropertyAvailability(property.id, bookings);
+      return {
+        ...property,
+        ...availability,
+      };
+    }
+    
+    return undefined;
+  } catch (error) {
+    console.error('Error in getPropertyById:', error);
+    return undefined;
   }
-  
-  return Promise.resolve(undefined);
 };
 
 export const createProperty = async (property: Omit<Property, 'id' | 'createdAt'>): Promise<Property> => {
-  // TODO: Replace with actual API call
-  // return fetch(`${BASE_URL}/properties`, { method: 'POST', body: JSON.stringify(property) }).then(res => res.json());
+  const { storageService } = await import('./storage');
   const newProperty = {
     ...property,
     id: Date.now().toString(),
     createdAt: new Date().toISOString(),
-  };
-  mockProperties.push(newProperty);
-  return Promise.resolve(newProperty);
+  } as Property;
+  
+  return await storageService.createProperty(newProperty);
 };
 
 export const updateProperty = async (id: string, property: Partial<Property>): Promise<Property> => {
-  // TODO: Replace with actual API call
-  // return fetch(`${BASE_URL}/properties/${id}`, { method: 'PUT', body: JSON.stringify(property) }).then(res => res.json());
-  const index = mockProperties.findIndex(p => p.id === id);
-  if (index !== -1) {
-    mockProperties[index] = { ...mockProperties[index], ...property };
-    return Promise.resolve(mockProperties[index]);
-  }
-  throw new Error('Property not found');
+  const { storageService } = await import('./storage');
+  return await storageService.updateProperty(id, property);
 };
 
 export const deleteProperty = async (id: string): Promise<void> => {
-  // TODO: Replace with actual API call
-  // return fetch(`${BASE_URL}/properties/${id}`, { method: 'DELETE' }).then(res => res.json());
-  const index = mockProperties.findIndex(p => p.id === id);
-  if (index !== -1) {
-    mockProperties.splice(index, 1);
-  }
-  return Promise.resolve();
+  const { storageService } = await import('./storage');
+  return await storageService.deleteProperty(id);
 };
 
 // Features API
 export const getFeatures = async (): Promise<Feature[]> => {
-  // TODO: Replace with actual API call
-  return Promise.resolve(mockFeatures);
+  const { storageService } = await import('./storage');
+  return await storageService.getFeatures();
 };
 
 export const createFeature = async (feature: Omit<Feature, 'id'>): Promise<Feature> => {
-  // TODO: Replace with actual API call
-  const newFeature = { ...feature, id: Date.now().toString() };
-  mockFeatures.push(newFeature);
-  return Promise.resolve(newFeature);
+  const { storageService } = await import('./storage');
+  const newFeature = { 
+    ...feature, 
+    id: Date.now().toString() 
+  } as Feature;
+  return await storageService.createFeature(newFeature);
 };
 
 export const updateFeature = async (id: string, feature: Partial<Feature>): Promise<Feature> => {
-  // TODO: Replace with actual API call
-  const index = mockFeatures.findIndex(f => f.id === id);
-  if (index !== -1) {
-    mockFeatures[index] = { ...mockFeatures[index], ...feature };
-    return Promise.resolve(mockFeatures[index]);
-  }
-  throw new Error('Feature not found');
+  const { storageService } = await import('./storage');
+  return await storageService.updateFeature(id, feature);
 };
 
 export const deleteFeature = async (id: string): Promise<void> => {
-  // TODO: Replace with actual API call
-  const index = mockFeatures.findIndex(f => f.id === id);
-  if (index !== -1) {
-    mockFeatures.splice(index, 1);
-  }
-  return Promise.resolve();
+  const { storageService } = await import('./storage');
+  return await storageService.deleteFeature(id);
 };
 
 // Customers API

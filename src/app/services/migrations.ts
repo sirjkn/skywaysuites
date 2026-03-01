@@ -544,44 +544,84 @@ export const syncSupabaseToLocalStorage = async (): Promise<MigrationResult> => 
 
   try {
     // Sync Properties
-    const { data: properties } = await supabase.from('properties').select('*');
-    if (properties) localStorage.setItem('properties', JSON.stringify(properties));
+    const { data: properties, error: propsError } = await supabase.from('properties').select('*');
+    if (propsError) {
+      console.warn('Error syncing properties from Supabase:', propsError);
+    } else if (properties) {
+      localStorage.setItem('properties', JSON.stringify(properties));
+    }
 
     // Sync Features
-    const { data: features } = await supabase.from('features').select('*');
-    if (features) localStorage.setItem('features', JSON.stringify(features));
+    const { data: features, error: featuresError } = await supabase.from('features').select('*');
+    if (featuresError) {
+      console.warn('Error syncing features from Supabase:', featuresError);
+    } else if (features) {
+      localStorage.setItem('features', JSON.stringify(features));
+    }
 
     // Sync Customers
-    const { data: customers } = await supabase.from('customers').select('*');
-    if (customers) localStorage.setItem('customers', JSON.stringify(customers));
+    const { data: customers, error: customersError } = await supabase.from('customers').select('*');
+    if (customersError) {
+      console.warn('Error syncing customers from Supabase:', customersError);
+    } else if (customers) {
+      localStorage.setItem('customers', JSON.stringify(customers));
+    }
 
     // Sync Bookings
-    const { data: bookings } = await supabase.from('bookings').select('*');
-    if (bookings) localStorage.setItem('bookings', JSON.stringify(bookings));
+    const { data: bookings, error: bookingsError } = await supabase.from('bookings').select('*');
+    if (bookingsError) {
+      console.warn('Error syncing bookings from Supabase:', bookingsError);
+    } else if (bookings) {
+      localStorage.setItem('bookings', JSON.stringify(bookings));
+    }
 
     // Sync Payments
-    const { data: payments } = await supabase.from('payments').select('*');
-    if (payments) localStorage.setItem('payments', JSON.stringify(payments));
+    const { data: payments, error: paymentsError } = await supabase.from('payments').select('*');
+    if (paymentsError) {
+      console.warn('Error syncing payments from Supabase:', paymentsError);
+    } else if (payments) {
+      localStorage.setItem('payments', JSON.stringify(payments));
+    }
 
     // Sync Menu Pages
-    const { data: menuPages } = await supabase.from('menu_pages').select('*');
-    if (menuPages) localStorage.setItem('menuPages', JSON.stringify(menuPages));
+    const { data: menuPages, error: menuPagesError } = await supabase.from('menu_pages').select('*');
+    if (menuPagesError) {
+      console.warn('Error syncing menu pages from Supabase:', menuPagesError);
+    } else if (menuPages) {
+      localStorage.setItem('menuPages', JSON.stringify(menuPages));
+    }
 
     // Sync App Users
-    const { data: appUsers } = await supabase.from('app_users').select('*');
-    if (appUsers) localStorage.setItem('appUsers', JSON.stringify(appUsers));
+    const { data: appUsers, error: appUsersError } = await supabase.from('app_users').select('*');
+    if (appUsersError) {
+      console.warn('Error syncing app users from Supabase:', appUsersError);
+    } else if (appUsers) {
+      localStorage.setItem('appUsers', JSON.stringify(appUsers));
+    }
 
     // Sync General Settings
-    const { data: generalSettings } = await supabase.from('general_settings').select('*').eq('id', 'default').single();
-    if (generalSettings) localStorage.setItem('generalSettings', JSON.stringify(generalSettings));
+    const { data: generalSettings, error: generalSettingsError } = await supabase.from('general_settings').select('*').eq('id', 'default').maybeSingle();
+    if (generalSettingsError) {
+      console.warn('Error syncing general settings from Supabase:', generalSettingsError);
+    } else if (generalSettings) {
+      localStorage.setItem('generalSettings', JSON.stringify(generalSettings));
+    }
 
     // Sync WhatsApp Settings
-    const { data: whatsappSettings } = await supabase.from('whatsapp_settings').select('*').eq('id', 'default').single();
-    if (whatsappSettings) localStorage.setItem('contactDetailsSettings', JSON.stringify(whatsappSettings));
+    const { data: whatsappSettings, error: whatsappSettingsError } = await supabase.from('whatsapp_settings').select('*').eq('id', 'default').maybeSingle();
+    if (whatsappSettingsError) {
+      console.warn('Error syncing WhatsApp settings from Supabase:', whatsappSettingsError);
+    } else if (whatsappSettings) {
+      localStorage.setItem('contactDetailsSettings', JSON.stringify(whatsappSettings));
+    }
 
     // Sync Slider Settings
-    const { data: sliderSettings } = await supabase.from('slider_settings').select('*').order('order');
-    if (sliderSettings) localStorage.setItem('heroSlides', JSON.stringify(sliderSettings));
+    const { data: sliderSettings, error: sliderSettingsError } = await supabase.from('slider_settings').select('*').order('order');
+    if (sliderSettingsError) {
+      console.warn('Error syncing slider settings from Supabase:', sliderSettingsError);
+    } else if (sliderSettings) {
+      localStorage.setItem('heroSlides', JSON.stringify(sliderSettings));
+    }
 
     return {
       success: true,
