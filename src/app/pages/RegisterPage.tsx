@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
-import { Building2, Mail, Lock, User, Eye, EyeOff, Phone } from 'lucide-react';
+import { Building2, Mail, Lock, User, Eye, EyeOff, Phone, MapPin, Upload, X } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
 import { toast } from 'sonner';
+import { convertToWebP, isValidImageFile } from '../utils/imageUtils';
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
@@ -14,24 +16,51 @@ export const RegisterPage = () => {
     name: '',
     email: '',
     phone: '',
+    address: '',
+    photo: '',
     password: '',
     confirmPassword: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string>('');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
   };
 
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    if (!isValidImageFile(file)) {
+      toast.error('Invalid image file. Please upload a valid image.');
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      const webPImage = await convertToWebP(file, { maxWidth: 800, maxHeight: 800, quality: 0.85 });
+      setFormData({ ...formData, photo: webPImage });
+      setPhotoPreview(webPImage);
+      toast.success('Photo uploaded and converted to WebP successfully!');
+    } catch (error) {
+      console.error('Error converting image to WebP:', error);
+      toast.error('Failed to upload photo. Please try again.');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email || !formData.phone || !formData.password || !formData.confirmPassword) {
-      toast.error('Please fill in all fields');
+    if (!formData.name || !formData.email || !formData.phone || !formData.address || !formData.password || !formData.confirmPassword) {
+      toast.error('Please fill in all required fields');
       return;
     }
 
@@ -121,6 +150,69 @@ export const RegisterPage = () => {
                   placeholder="+254 700 000 000"
                   className="pl-10 h-12 border-[#6B7F39]/20 focus:border-[#6B7F39]"
                 />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="address" className="text-[#36454F]">Address</Label>
+              <div className="relative mt-2">
+                <MapPin className="absolute left-3 top-3 w-5 h-5 text-[#6B7F39]" />
+                <Textarea
+                  id="address"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  placeholder="Enter your address"
+                  rows={3}
+                  className="pl-10 border-[#6B7F39]/20 focus:border-[#6B7F39] resize-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="photoUpload" className="text-[#36454F]">Profile Photo (optional)</Label>
+              <div className="mt-2">
+                {photoPreview ? (
+                  <div className="relative inline-block">
+                    <img
+                      src={photoPreview}
+                      alt="Preview"
+                      className="w-24 h-24 rounded-lg object-cover border-2 border-[#6B7F39]/30"
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setPhotoPreview('');
+                        setFormData({ ...formData, photo: '' });
+                      }}
+                      variant="ghost"
+                      size="sm"
+                      className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-6 h-6 p-0"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <Input
+                      id="photoUpload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      disabled={uploadingPhoto}
+                      className="cursor-pointer"
+                    />
+                    {uploadingPhoto && (
+                      <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-md">
+                        <Upload className="w-5 h-5 text-[#6B7F39] animate-pulse" />
+                        <span className="ml-2 text-sm text-[#36454F]">Converting...</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <p className="text-xs text-[#36454F]/60 mt-1">
+                  Images will be automatically converted to WebP format
+                </p>
               </div>
             </div>
 

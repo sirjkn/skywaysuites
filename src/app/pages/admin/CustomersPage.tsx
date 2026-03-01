@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer, Customer } from '../../services/api';
-import { Plus, Edit, Trash2, User, Upload, X } from 'lucide-react';
+import { Plus, Edit, Trash2, User, Upload, X, Eye, EyeOff, Lock } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -16,12 +16,14 @@ export const CustomersPage = () => {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>('');
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     address: '',
     photo: '',
+    password: '',
   });
 
   useEffect(() => {
@@ -40,9 +42,10 @@ export const CustomersPage = () => {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', email: '', phone: '', address: '', photo: '' });
+    setFormData({ name: '', email: '', phone: '', address: '', photo: '', password: '' });
     setEditingCustomer(null);
     setPhotoPreview('');
+    setShowPassword(false);
   };
 
   const handleAdd = () => {
@@ -58,6 +61,7 @@ export const CustomersPage = () => {
       phone: customer.phone,
       address: customer.address,
       photo: customer.photo || '',
+      password: '',
     });
     setPhotoPreview(customer.photo || '');
     setDialogOpen(true);
@@ -297,6 +301,29 @@ export const CustomersPage = () => {
                 <p className="text-xs text-[#36454F]/60 mt-1">
                   Images will be automatically converted to WebP format and compressed for faster loading
                 </p>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="password">{editingCustomer ? 'Password (leave blank to keep unchanged)' : 'Password'}</Label>
+              <div className="relative mt-1">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6B7F39]" />
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  required={!editingCustomer}
+                  placeholder="Enter password"
+                  className="pl-10 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7F39] hover:text-[#556230]"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
