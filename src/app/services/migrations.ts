@@ -326,7 +326,12 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
       if (properties.length > 0) {
         migrations.push(
           supabase.from('properties').upsert(properties).then(({ error, count }) => {
-            if (!error) results.properties = properties.length;
+            if (!error) {
+              results.properties = properties.length;
+              console.log(`✅ Synced ${properties.length} properties (including status: available/availableAfter)`);
+            } else {
+              console.error('❌ Properties sync error:', error);
+            }
           })
         );
       }
@@ -365,7 +370,12 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
       if (bookings.length > 0) {
         migrations.push(
           supabase.from('bookings').upsert(bookings).then(({ error }) => {
-            if (!error) results.bookings = bookings.length;
+            if (!error) {
+              results.bookings = bookings.length;
+              console.log(`✅ Synced ${bookings.length} bookings (including all statuses: pending/confirmed/cancelled)`);
+            } else {
+              console.error('❌ Bookings sync error:', error);
+            }
           })
         );
       }

@@ -286,11 +286,32 @@ export const SettingsPage = () => {
     }
 
     setSyncing(true);
+    toast.loading("Syncing data from localStorage to Supabase...");
+    
     try {
       const result = await syncNow();
       if (result.success) {
         setLastSyncTime(new Date());
-        toast.success("Data synced successfully!");
+        
+        // Show detailed sync results
+        if (result.details) {
+          const counts = result.details;
+          const totalItems = Object.values(counts).reduce((sum: number, val: any) => 
+            sum + (typeof val === 'number' ? val : 0), 0
+          );
+          
+          toast.success(
+            `✅ Synced ${totalItems} items: ` +
+            `${counts.properties || 0} properties, ` +
+            `${counts.features || 0} features, ` +
+            `${counts.customers || 0} customers, ` +
+            `${counts.bookings || 0} bookings, ` +
+            `${counts.payments || 0} payments`,
+            { duration: 5000 }
+          );
+        } else {
+          toast.success("Data synced successfully!");
+        }
         
         // Start auto-sync after first manual sync
         if (!autoSyncEnabled) {
@@ -298,12 +319,13 @@ export const SettingsPage = () => {
           startAutoSync((time) => {
             setLastSyncTime(time);
           });
-          toast.info("Auto-sync enabled! Syncing every 10 seconds.");
+          toast.info("Auto-sync enabled! Syncing every 10 seconds.", { duration: 4000 });
         }
       } else {
         toast.error(`Sync failed: ${result.message}`);
       }
     } catch (error) {
+      console.error("Sync error:", error);
       toast.error("Sync failed. Please try again.");
     } finally {
       setSyncing(false);
@@ -1531,6 +1553,22 @@ export const SettingsPage = () => {
                 </Button>
               )}
             </div>
+
+            {/* Sync Info */}
+            {databaseSettings.connected && (
+              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5" />
+                  <div className="text-sm text-blue-800">
+                    <span className="font-semibold">Sync Direction: </span>
+                    localStorage → Supabase
+                    <p className="text-xs mt-1 text-blue-700">
+                      Click "Sync Now" to push all data from your browser to the cloud database
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Sync Status */}
             {databaseSettings.connected && lastSyncTime && (

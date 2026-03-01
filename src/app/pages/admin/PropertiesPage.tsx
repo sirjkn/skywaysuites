@@ -148,11 +148,22 @@ export const PropertiesPage = () => {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     
+    if (files.length === 0) return;
+    
+    // Show initial toast for multiple files
+    if (files.length > 1) {
+      toast.info(`📤 Uploading ${files.length} images...`);
+    }
+    
+    let successCount = 0;
+    let errorCount = 0;
+    
     for (const file of files) {
       // Validate file
       const error = validateImageFile(file, 5);
       if (error) {
-        toast.error(error);
+        toast.error(`${file.name}: ${error}`);
+        errorCount++;
         continue;
       }
       
@@ -198,10 +209,26 @@ export const PropertiesPage = () => {
           )
         );
         
-        toast.success(`Image compressed: ${formatBytes(result.originalSize)} → ${formatBytes(result.compressedSize)} (${result.compressionRatio.toFixed(1)}% reduction)`);
+        successCount++;
+        
+        if (files.length === 1) {
+          toast.success(`Image compressed: ${formatBytes(result.originalSize)} → ${formatBytes(result.compressedSize)} (${result.compressionRatio.toFixed(1)}% reduction)`);
+        }
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Failed to compress image');
+        errorCount++;
+        toast.error(error instanceof Error ? error.message : `Failed to compress ${file.name}`);
         setUploadingImages(prev => prev.filter(img => img.file !== file));
+      }
+    }
+    
+    // Show summary for multiple files
+    if (files.length > 1) {
+      if (successCount > 0 && errorCount === 0) {
+        toast.success(`✅ Successfully uploaded ${successCount} image${successCount > 1 ? 's' : ''}!`);
+      } else if (successCount > 0 && errorCount > 0) {
+        toast.warning(`⚠️ Uploaded ${successCount} image${successCount > 1 ? 's' : ''}, ${errorCount} failed.`);
+      } else if (errorCount > 0) {
+        toast.error(`❌ Failed to upload ${errorCount} image${errorCount > 1 ? 's' : ''}.`);
       }
     }
     
@@ -545,10 +572,10 @@ export const PropertiesPage = () => {
                     className="inline-flex items-center px-4 py-2 border border-[#6B7F39] rounded-lg cursor-pointer hover:bg-[#6B7F39] hover:text-white transition-colors text-[#6B7F39] font-medium"
                   >
                     <Upload className="w-4 h-4 mr-2" />
-                    Upload Images
+                    Upload Images (Multiple)
                   </label>
                   <p className="text-xs text-[#7F8C8D] mt-1">
-                    Images will be automatically compressed and converted to WebP format
+                    💡 You can select multiple images at once. Images will be automatically compressed and converted to WebP format.
                   </p>
                 </div>
 
