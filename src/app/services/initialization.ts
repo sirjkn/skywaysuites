@@ -1,4 +1,5 @@
 import { storageService } from './storage';
+import { initializeSupabase } from './supabase';
 
 export interface AppUser {
   id: string;
@@ -22,10 +23,28 @@ const DEFAULT_ADMIN: AppUser = {
 
 /**
  * Initialize the application with default data
- * This ensures the default admin user exists
+ * This ensures the default admin user exists and Supabase is connected
  */
 export const initializeApp = async (): Promise<void> => {
   try {
+    // Initialize Supabase if credentials are saved
+    const databaseSettings = localStorage.getItem('databaseSettings');
+    if (databaseSettings) {
+      try {
+        const settings = JSON.parse(databaseSettings);
+        if (settings.supabaseUrl && settings.supabaseAnonKey) {
+          console.log('🔄 Auto-connecting to Supabase...');
+          initializeSupabase({
+            url: settings.supabaseUrl,
+            anonKey: settings.supabaseAnonKey,
+          });
+          console.log('✅ Supabase auto-connected successfully');
+        }
+      } catch (error) {
+        console.error('❌ Failed to auto-connect Supabase:', error);
+      }
+    }
+
     // Get existing app users
     const users = await storageService.getAppUsers();
     

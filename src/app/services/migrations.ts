@@ -331,6 +331,7 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
               console.log(`✅ Synced ${properties.length} properties (including status: available/availableAfter)`);
             } else {
               console.error('❌ Properties sync error:', error);
+              console.error('❌ Error details:', JSON.stringify(error, null, 2));
             }
           })
         );
