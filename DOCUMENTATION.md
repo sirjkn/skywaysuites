@@ -1,6 +1,6 @@
 # Skyway Suites - Complete Documentation
 
-**Version:** v1.80  
+**Version:** v1.81  
 **Last Updated:** March 1, 2026  
 **Project Type:** Property Listing & Management Platform  
 **Tech Stack:** React + TypeScript + Supabase + Tailwind CSS v4
@@ -1007,7 +1007,86 @@ localStorage.setItem('maintenanceMode', JSON.stringify({
 
 ## Version History
 
-### v1.80 (Current) - March 1, 2026
+### v1.81 (Current) - March 1, 2026
+**Feature: Functional Backup & Restore System**
+
+#### New Features
+- ✅ **Download Backup File**
+  - Click "Download Backup File" button to download all data as JSON
+  - Automatic file naming: `skyway-suites-backup-YYYY-MM-DD.json`
+  - Includes all data: Properties, Features, Customers, Bookings, Payments, Settings
+  - Shows detailed success message with item counts
+  - Timestamp and version included in backup file
+  
+- ✅ **Restore from Backup File**
+  - Select .json backup file to restore
+  - Comprehensive confirmation dialog showing backup details
+  - Validates backup file format and structure
+  - Automatic page reload after successful restore
+  - Clear file input after operation
+  
+- ✅ **Enhanced Backup UI**
+  - Download icon on backup button
+  - Upload icon on restore button
+  - File input accepts only .json files
+  - Helpful tooltips and instructions
+  - Updated warning message with tips
+
+#### Technical Implementation
+- Modified `/src/app/pages/admin/SettingsPage.tsx`:
+  - Implemented `handleBackup()` function:
+    - Collects all localStorage data
+    - Creates JSON blob with metadata
+    - Triggers browser download
+    - Shows success toast with statistics
+  - Implemented `handleRestoreFileSelect()` function:
+    - Reads and validates JSON file
+    - Shows detailed confirmation dialog
+    - Restores all data to localStorage
+    - Reloads page to apply changes
+  - Added `restoreFileInputRef` for file input control
+  - Updated button labels and icons
+
+#### Backup File Structure
+```json
+{
+  "timestamp": "2026-03-01T12:00:00.000Z",
+  "version": "1.81",
+  "data": {
+    "properties": [...],
+    "features": [...],
+    "customers": [...],
+    "bookings": [...],
+    "payments": [...],
+    "menuPages": [...],
+    "appUsers": [...],
+    "generalSettings": {...},
+    "contactDetailsSettings": {...},
+    "heroSlides": [...],
+    "databaseSettings": {...}
+  }
+}
+```
+
+#### What This Enables
+- ✅ **Local Backups:** Download complete data snapshots
+- ✅ **Data Migration:** Transfer data between browsers/devices
+- ✅ **Disaster Recovery:** Restore from backup if data is lost
+- ✅ **Version Control:** Keep multiple backup versions
+- ✅ **Testing:** Backup before major changes
+- ✅ **Offline Access:** Store backups independently
+
+#### User Benefits
+- 💾 One-click backup download
+- 📤 Easy restore from file
+- 🔍 See exactly what's in each backup
+- ⚠️ Confirmation before overwriting data
+- ✅ Automatic page refresh after restore
+- 📊 Detailed success/error feedback
+
+---
+
+### v1.80 - March 1, 2026
 **Major Enhancement: Bidirectional Sync & Cross-Browser Support**
 
 #### New Features
@@ -1882,5 +1961,5 @@ This software is proprietary and confidential. Unauthorized copying, modificatio
 
 ---
 
-**Last Updated:** March 1, 2026 | **Version:** v1.80  
+**Last Updated:** March 1, 2026 | **Version:** v1.81  
 **Maintained by:** Skyway Suites Development Team

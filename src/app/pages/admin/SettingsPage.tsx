@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Settings as SettingsIcon, 
   Palette, 
@@ -208,6 +208,9 @@ export const SettingsPage = () => {
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [lastPullTime, setLastPullTime] = useState<Date | null>(null);
   const [showSQLDialog, setShowSQLDialog] = useState(false);
+  
+  // File input ref for restore
+  const restoreFileInputRef = useRef<HTMLInputElement>(null);
 
   const [emailSettings, setEmailSettings] = useState(() => {
     const stored = getEmailSettings();
@@ -446,15 +449,144 @@ export const SettingsPage = () => {
   };
 
   const handleBackup = () => {
-    toast.success("Backup created successfully");
-    // TODO: Implement backup functionality with your backend
+    try {
+      // Gather all data from localStorage
+      const backupData = {
+        timestamp: new Date().toISOString(),
+        version: "1.80",
+        data: {
+          properties: JSON.parse(localStorage.getItem('properties') || '[]'),
+          features: JSON.parse(localStorage.getItem('features') || '[]'),
+          customers: JSON.parse(localStorage.getItem('customers') || '[]'),
+          bookings: JSON.parse(localStorage.getItem('bookings') || '[]'),
+          payments: JSON.parse(localStorage.getItem('payments') || '[]'),
+          menuPages: JSON.parse(localStorage.getItem('menuPages') || '[]'),
+          appUsers: JSON.parse(localStorage.getItem('appUsers') || '[]'),
+          generalSettings: JSON.parse(localStorage.getItem('generalSettings') || '{}'),
+          contactDetailsSettings: JSON.parse(localStorage.getItem('contactDetailsSettings') || '{}'),
+          heroSlides: JSON.parse(localStorage.getItem('heroSlides') || '[]'),
+          databaseSettings: JSON.parse(localStorage.getItem('databaseSettings') || '{}'),
+        }
+      };
+
+      // Create blob and download
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Create filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
+      link.download = `skyway-suites-backup-${timestamp}.json`;
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      // Show success message with data summary
+      const totalItems = 
+        backupData.data.properties.length +
+        backupData.data.features.length +
+        backupData.data.customers.length +
+        backupData.data.bookings.length +
+        backupData.data.payments.length;
+
+      toast.success(
+        `✅ Backup created successfully! Downloaded ${totalItems} items (${backupData.data.properties.length} properties, ${backupData.data.customers.length} customers, ${backupData.data.bookings.length} bookings)`,
+        { duration: 5000 }
+      );
+    } catch (error) {
+      console.error('Backup error:', error);
+      toast.error('Failed to create backup. Please try again.');
+    }
   };
 
-  const handleRestore = () => {
-    toast.info(
-      "Restore functionality - Connect to your backend",
-    );
-    // TODO: Implement restore functionality with your backend
+  const handleRestoreFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.name.endsWith('.json')) {
+      toast.error('Invalid file type. Please select a JSON backup file.');
+      return;
+    }
+
+    try {
+      const fileContent = await file.text();
+      const backupData = JSON.parse(fileContent);
+
+      // Validate backup structure
+      if (!backupData.data || !backupData.version) {
+        toast.error('Invalid backup file format.');
+        return;
+      }
+
+      // Show confirmation dialog
+      const confirmed = window.confirm(
+        `⚠️ WARNING: This will overwrite all current data!\n\n` +
+        `Backup from: ${new Date(backupData.timestamp).toLocaleString()}\n` +
+        `Version: ${backupData.version}\n\n` +
+        `This backup contains:\n` +
+        `• ${backupData.data.properties?.length || 0} properties\n` +
+        `• ${backupData.data.customers?.length || 0} customers\n` +
+        `• ${backupData.data.bookings?.length || 0} bookings\n` +
+        `• ${backupData.data.features?.length || 0} features\n\n` +
+        `Are you sure you want to continue?`
+      );
+
+      if (!confirmed) {
+        toast.info('Restore cancelled');
+        if (restoreFileInputRef.current) {
+          restoreFileInputRef.current.value = '';
+        }
+        return;
+      }
+
+      // Restore all data to localStorage
+      const { data } = backupData;
+      
+      if (data.properties) localStorage.setItem('properties', JSON.stringify(data.properties));
+      if (data.features) localStorage.setItem('features', JSON.stringify(data.features));
+      if (data.customers) localStorage.setItem('customers', JSON.stringify(data.customers));
+      if (data.bookings) localStorage.setItem('bookings', JSON.stringify(data.bookings));
+      if (data.payments) localStorage.setItem('payments', JSON.stringify(data.payments));
+      if (data.menuPages) localStorage.setItem('menuPages', JSON.stringify(data.menuPages));
+      if (data.appUsers) localStorage.setItem('appUsers', JSON.stringify(data.appUsers));
+      if (data.generalSettings) localStorage.setItem('generalSettings', JSON.stringify(data.generalSettings));
+      if (data.contactDetailsSettings) localStorage.setItem('contactDetailsSettings', JSON.stringify(data.contactDetailsSettings));
+      if (data.heroSlides) localStorage.setItem('heroSlides', JSON.stringify(data.heroSlides));
+      if (data.databaseSettings) localStorage.setItem('databaseSettings', JSON.stringify(data.databaseSettings));
+
+      // Calculate total items restored
+      const totalItems = 
+        (data.properties?.length || 0) +
+        (data.features?.length || 0) +
+        (data.customers?.length || 0) +
+        (data.bookings?.length || 0) +
+        (data.payments?.length || 0);
+
+      toast.success(
+        `✅ Backup restored successfully! ${totalItems} items restored. Page will reload in 2 seconds...`,
+        { duration: 5000 }
+      );
+
+      // Reload page after 2 seconds to apply changes
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+
+      // Clear file input
+      if (restoreFileInputRef.current) {
+        restoreFileInputRef.current.value = '';
+      }
+    } catch (error) {
+      console.error('Restore error:', error);
+      toast.error('Failed to restore backup. Please check the file format.');
+      if (restoreFileInputRef.current) {
+        restoreFileInputRef.current.value = '';
+      }
+    }
   };
 
   const handleUploadSlideImage = async (
@@ -1399,7 +1531,8 @@ export const SettingsPage = () => {
                   onClick={handleBackup}
                   className="bg-[#36454F] hover:bg-[#2C3E50] text-white"
                 >
-                  Create Backup Now
+                  <Download className="w-4 h-4 mr-2" />
+                  Download Backup File
                 </Button>
               </div>
 
@@ -1411,26 +1544,35 @@ export const SettingsPage = () => {
                   Restore your database from a previous backup
                   file. This will overwrite current data.
                 </p>
-                <div className="flex gap-3">
+                <div className="flex gap-3 items-center">
                   <Input
+                    ref={restoreFileInputRef}
                     type="file"
-                    accept=".sql,.backup"
+                    accept=".json"
+                    onChange={handleRestoreFileSelect}
                     className="flex-1"
                   />
                   <Button
-                    onClick={handleRestore}
+                    onClick={() => restoreFileInputRef.current?.click()}
                     variant="outline"
+                    className="whitespace-nowrap"
                   >
-                    Restore
+                    <Upload className="w-4 h-4 mr-2" />
+                    Select Backup File
                   </Button>
                 </div>
+                <p className="text-xs text-[#36454F]/50 mt-2">
+                  Accepts .json backup files created by this application
+                </p>
               </div>
 
-              <div className="p-4 border border-yellow-500/20 bg-yellow-50 rounded-lg">
-                <p className="text-sm text-yellow-800">
-                  <strong>⚠️ Important:</strong> Connect these
-                  backup operations to your database backend API
-                  to enable automatic backups and restoration.
+              <div className="p-4 border border-blue-500/20 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>💡 Tip:</strong> Backups are downloaded as JSON files containing all your data. 
+                  Store them safely! You can restore from any backup file by selecting it above.
+                </p>
+                <p className="text-xs text-blue-700 mt-2">
+                  Backup includes: Properties, Features, Customers, Bookings, Payments, Settings, and more.
                 </p>
               </div>
             </div>
