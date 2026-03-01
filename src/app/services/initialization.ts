@@ -1,5 +1,6 @@
 import { storageService } from './storage';
 import { initializeSupabase } from './supabase';
+import { syncSupabaseToLocalStorage } from './migrations';
 
 export interface AppUser {
   id: string;
@@ -39,6 +40,15 @@ export const initializeApp = async (): Promise<void> => {
             anonKey: settings.supabaseAnonKey,
           });
           console.log('✅ Supabase auto-connected successfully');
+          
+          // Pull data from Supabase to localStorage
+          console.log('🔄 Pulling latest data from Supabase...');
+          const syncResult = await syncSupabaseToLocalStorage();
+          if (syncResult.success) {
+            console.log('✅ Data synced from Supabase to localStorage');
+          } else {
+            console.warn('⚠️ Failed to sync from Supabase:', syncResult.message);
+          }
         }
       } catch (error) {
         console.error('❌ Failed to auto-connect Supabase:', error);

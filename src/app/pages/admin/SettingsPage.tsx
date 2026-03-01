@@ -36,7 +36,8 @@ import {
 } from '../../services/supabase';
 import { 
   getTableCreationSQL,
-  migrateLocalStorageToSupabase 
+  migrateLocalStorageToSupabase,
+  syncSupabaseToLocalStorage
 } from '../../services/migrations';
 import { syncNow, startAutoSync, stopAutoSync } from '../../services/syncService';
 import { copyToClipboard, downloadAsFile } from '../../utils/clipboard';
@@ -202,8 +203,10 @@ export const SettingsPage = () => {
 
   const [migrating, setMigrating] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [pulling, setPulling] = useState(false);
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+  const [lastPullTime, setLastPullTime] = useState<Date | null>(null);
   const [showSQLDialog, setShowSQLDialog] = useState(false);
 
   const [emailSettings, setEmailSettings] = useState(() => {
@@ -329,6 +332,36 @@ export const SettingsPage = () => {
       toast.error("Sync failed. Please try again.");
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handlePullFromSupabase = async () => {
+    if (!databaseSettings.connected) {
+      toast.error("Please connect to Supabase first");
+      return;
+    }
+
+    setPulling(true);
+    toast.loading("Pulling latest data from Supabase...");
+    
+    try {
+      const result = await syncSupabaseToLocalStorage();
+      if (result.success) {
+        setLastPullTime(new Date());
+        toast.success("✅ Successfully pulled all data from Supabase! Page will reload to show updated data.", { duration: 5000 });
+        
+        // Reload page after 2 seconds to show updated data
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      } else {
+        toast.error(`Pull failed: ${result.message}`);
+      }
+    } catch (error) {
+      console.error("Pull error:", error);
+      toast.error("Pull failed. Please try again.");
+    } finally {
+      setPulling(false);
     }
   };
 
@@ -1543,14 +1576,24 @@ export const SettingsPage = () => {
               </Button>
 
               {databaseSettings.connected && (
-                <Button
-                  onClick={handleSyncNow}
-                  disabled={syncing}
-                  className="bg-[#6B7F39] hover:bg-[#5A6A2F] text-white"
-                >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-                  {syncing ? 'Syncing...' : 'Sync Now'}
-                </Button>
+                <>
+                  <Button
+                    onClick={handlePullFromSupabase}
+                    disabled={pulling}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Download className={`w-4 h-4 mr-2 ${pulling ? 'animate-pulse' : ''}`} />
+                    {pulling ? 'Pulling...' : 'Pull from Supabase'}
+                  </Button>
+                  <Button
+                    onClick={handleSyncNow}
+                    disabled={syncing}
+                    className="bg-[#6B7F39] hover:bg-[#5A6A2F] text-white"
+                  >
+                    <Upload className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+                    {syncing ? 'Pushing...' : 'Push to Supabase'}
+                  </Button>
+                </>
               )}
             </div>
 
@@ -1560,25 +1603,38 @@ export const SettingsPage = () => {
                 <div className="flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5" />
                   <div className="text-sm text-blue-800">
-                    <span className="font-semibold">Sync Direction: </span>
-                    localStorage → Supabase
-                    <p className="text-xs mt-1 text-blue-700">
-                      Click "Sync Now" to push all data from your browser to the cloud database
-                    </p>
+                    <span className="font-semibold">Bidirectional Sync:</span>
+                    <div className="text-xs mt-1 text-blue-700 space-y-1">
+                      <p>• <strong>Pull from Supabase:</strong> Download latest data from cloud to this browser</p>
+                      <p>• <strong>Push to Supabase:</strong> Upload data from this browser to cloud</p>
+                      <p className="mt-2 text-blue-600 font-semibold">💡 Use "Pull" when switching browsers to get your data!</p>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
 
             {/* Sync Status */}
-            {databaseSettings.connected && lastSyncTime && (
+            {databaseSettings.connected && (lastSyncTime || lastPullTime) && (
               <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-green-800">
-                    Last synced: {lastSyncTime.toLocaleTimeString()}
-                    {autoSyncEnabled && ' • Auto-sync enabled (every 10s)'}
-                  </span>
+                <div className="flex flex-col gap-1">
+                  {lastPullTime && (
+                    <div className="flex items-center gap-2">
+                      <Download className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm text-blue-800">
+                        Last pulled: {lastPullTime.toLocaleTimeString()}
+                      </span>
+                    </div>
+                  )}
+                  {lastSyncTime && (
+                    <div className="flex items-center gap-2">
+                      <Upload className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-green-800">
+                        Last pushed: {lastSyncTime.toLocaleTimeString()}
+                        {autoSyncEnabled && ' • Auto-sync enabled (every 10s)'}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

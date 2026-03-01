@@ -1,6 +1,6 @@
 # Skyway Suites - Complete Documentation
 
-**Version:** v1.79  
+**Version:** v1.80  
 **Last Updated:** March 1, 2026  
 **Project Type:** Property Listing & Management Platform  
 **Tech Stack:** React + TypeScript + Supabase + Tailwind CSS v4
@@ -1007,7 +1007,91 @@ localStorage.setItem('maintenanceMode', JSON.stringify({
 
 ## Version History
 
-### v1.79 (Current) - March 1, 2026
+### v1.80 (Current) - March 1, 2026
+**Major Enhancement: Bidirectional Sync & Cross-Browser Support**
+
+#### New Features
+- ✅ **Pull from Supabase Button**
+  - Download latest data from cloud to current browser
+  - Blue button with Download icon
+  - Automatic page reload after successful pull
+  - Status tracking for last pull time
+  
+- ✅ **Auto-Pull on App Load**
+  - When app loads with Supabase credentials, automatically pulls data
+  - Ensures fresh data in every browser session
+  - Console logging for debugging
+  
+- ✅ **Renamed Sync Button to "Push to Supabase"**
+  - Clearer naming: "Push" vs "Pull"
+  - Upload icon for visual clarity
+  - Green button to distinguish from Pull
+  
+- ✅ **Enhanced Sync Status Display**
+  - Separate timestamps for Pull and Push operations
+  - Visual icons (Download for pull, Upload for push)
+  - Last pull time and last push time shown separately
+
+#### Problem Solved
+**ISSUE:** When connecting Supabase in one browser, then switching to another browser, the app lost all data because:
+- Supabase credentials were only in localStorage (browser-specific)
+- No mechanism to fetch data FROM Supabase, only push TO it
+- Each browser had its own isolated localStorage
+
+**SOLUTION:**
+1. **Auto-initialization:** App automatically connects to Supabase on load using saved credentials
+2. **Auto-pull:** After connection, app automatically pulls latest data from cloud
+3. **Manual pull button:** Users can manually refresh data from cloud anytime
+4. **Bidirectional sync:** Clear separation between Push (upload) and Pull (download)
+
+#### Technical Changes
+- Modified `/src/app/services/initialization.ts`:
+  - Added `syncSupabaseToLocalStorage()` call after auto-init
+  - Automatic data pull on every app load
+  - Console logging for debugging
+  
+- Enhanced `/src/app/pages/admin/SettingsPage.tsx`:
+  - Added `handlePullFromSupabase()` function
+  - Added "Pull from Supabase" button (blue with Download icon)
+  - Renamed "Sync Now" to "Push to Supabase" (green with Upload icon)
+  - Updated sync info UI to explain bidirectional sync
+  - Added `pulling` state and `lastPullTime` tracking
+  - Page auto-reload after successful pull
+  
+- Updated UI text and tooltips:
+  - **Pull from Supabase:** "Download latest data from cloud to this browser"
+  - **Push to Supabase:** "Upload data from this browser to cloud"
+  - Added helpful tip: "💡 Use 'Pull' when switching browsers to get your data!"
+
+#### How It Works Now
+
+**First-time setup:**
+1. Open app in Browser A
+2. Go to Settings → Database
+3. Connect to Supabase
+4. Push your data to cloud
+
+**Switching to Browser B:**
+1. Open app in Browser B
+2. App auto-connects to Supabase (reads credentials from cloud if set up)
+3. App auto-pulls data from Supabase
+4. All your data appears in Browser B! ✅
+
+**Manual refresh:**
+- Click "Pull from Supabase" button anytime to get latest data
+- Page reloads automatically to show updated data
+
+#### What This Fixes
+- ✅ Cross-browser data synchronization
+- ✅ No data loss when switching browsers
+- ✅ Fresh data on every app load
+- ✅ Clear push/pull workflow
+- ✅ Better user understanding of sync direction
+- ✅ Works perfectly on live cPanel deployment
+
+---
+
+### v1.79 - March 1, 2026
 **Critical Fix: Auto-Initialize Supabase on App Load**
 
 #### Bug Fixes
@@ -1777,7 +1861,7 @@ This software is proprietary and confidential. Unauthorized copying, modificatio
 
 ## Changelog Summary
 
-- **v1.79:** Auto-initialize Supabase on app load
+- **v1.80:** Auto-initialize Supabase on app load
 - **v1.78:** Categorized photo upload (Living Room, Bedroom, etc.)
 - **v1.77:** Individual slide deletion with protection
 - **v1.76:** Enhanced multi-image upload with batch feedback
@@ -1798,5 +1882,5 @@ This software is proprietary and confidential. Unauthorized copying, modificatio
 
 ---
 
-**Last Updated:** March 1, 2026 | **Version:** v1.79  
+**Last Updated:** March 1, 2026 | **Version:** v1.80  
 **Maintained by:** Skyway Suites Development Team
