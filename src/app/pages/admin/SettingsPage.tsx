@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Settings as SettingsIcon, 
   Palette, 
@@ -17,7 +17,8 @@ import {
   Image as ImageIcon,
   Mail,
   HardDrive as HardDriveIcon,
-  Users
+  Users,
+  RefreshCw
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -37,6 +38,7 @@ import {
   getTableCreationSQL,
   migrateLocalStorageToSupabase 
 } from '../../services/migrations';
+import { syncNow, startAutoSync, stopAutoSync } from '../../services/syncService';
 import { copyToClipboard, downloadAsFile } from '../../utils/clipboard';
 import { getEmailSettings, saveEmailSettings, initializeEmailJS } from '../../services/emailService';
 import { SliderSettings } from '../../components/settings/SliderSettings';
@@ -199,6 +201,9 @@ export const SettingsPage = () => {
     useState(false);
 
   const [migrating, setMigrating] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [showSQLDialog, setShowSQLDialog] = useState(false);
 
   const [emailSettings, setEmailSettings] = useState(() => {
@@ -246,19 +251,7 @@ export const SettingsPage = () => {
         window.dispatchEvent(
           new Event("databaseSettingsChanged"),
         );
-        toast.success("Successfully connected to Supabase!");
-        
-        // After successful connection, migrate data
-        toast.loading('Migrating local data to Supabase...');
-        setMigrating(true);
-        const migrationResult = await migrateLocalStorageToSupabase();
-        setMigrating(false);
-
-        if (migrationResult.success) {
-          toast.success(`Data migrated! ${JSON.stringify(migrationResult.details)}`);
-        } else {
-          toast.warning(`Migration completed with warnings: ${migrationResult.message}`);
-        }
+        toast.success("Successfully connected to Supabase! Use the 'Sync Now' button to sync your data.");
       } else {
         toast.error(
           "Failed to connect. Please check your credentials.",
@@ -273,6 +266,8 @@ export const SettingsPage = () => {
   };
 
   const handleDisconnectSupabase = () => {
+    stopAutoSync();
+    setAutoSyncEnabled(false);
     disconnectSupabase();
     const updated = { ...databaseSettings, connected: false };
     setDatabaseSettings(updated);
@@ -283,6 +278,53 @@ export const SettingsPage = () => {
     window.dispatchEvent(new Event("databaseSettingsChanged"));
     toast.info("Disconnected from Supabase");
   };
+
+  const handleSyncNow = async () => {
+    if (!databaseSettings.connected) {
+      toast.error("Please connect to Supabase first");
+      return;
+    }
+
+    setSyncing(true);
+    try {
+      const result = await syncNow();
+      if (result.success) {
+        setLastSyncTime(new Date());
+        toast.success("Data synced successfully!");
+        
+        // Start auto-sync after first manual sync
+        if (!autoSyncEnabled) {
+          setAutoSyncEnabled(true);
+          startAutoSync((time) => {
+            setLastSyncTime(time);
+          });
+          toast.info("Auto-sync enabled! Syncing every 10 seconds.");
+        }
+      } else {
+        toast.error(`Sync failed: ${result.message}`);
+      }
+    } catch (error) {
+      toast.error("Sync failed. Please try again.");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  // Auto-sync effect
+  useEffect(() => {
+    // Cleanup on unmount
+    return () => {
+      stopAutoSync();
+    };
+  }, []);
+
+  // Watch for connection status changes
+  useEffect(() => {
+    if (!databaseSettings.connected && autoSyncEnabled) {
+      stopAutoSync();
+      setAutoSyncEnabled(false);
+    }
+  }, [databaseSettings.connected, autoSyncEnabled]);
 
   const handleSaveStorageSettings = () => {
     localStorage.setItem(
@@ -1477,7 +1519,31 @@ export const SettingsPage = () => {
               >
                 {testingConnection ? 'Testing...' : 'Test Connection'}
               </Button>
+
+              {databaseSettings.connected && (
+                <Button
+                  onClick={handleSyncNow}
+                  disabled={syncing}
+                  className="bg-[#6B7F39] hover:bg-[#5A6A2F] text-white"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+                  {syncing ? 'Syncing...' : 'Sync Now'}
+                </Button>
+              )}
             </div>
+
+            {/* Sync Status */}
+            {databaseSettings.connected && lastSyncTime && (
+              <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                  <span className="text-sm text-green-800">
+                    Last synced: {lastSyncTime.toLocaleTimeString()}
+                    {autoSyncEnabled && ' • Auto-sync enabled (every 10s)'}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Setup Instructions */}
