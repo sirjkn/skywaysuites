@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 let supabaseClient: SupabaseClient | null = null;
+let currentConfig: SupabaseConfig | null = null;
 
 export interface SupabaseConfig {
   url: string;
@@ -9,9 +10,28 @@ export interface SupabaseConfig {
 
 /**
  * Initialize Supabase client with provided credentials
+ * Only creates a new client if credentials have changed
  */
 export const initializeSupabase = (config: SupabaseConfig): SupabaseClient => {
-  supabaseClient = createClient(config.url, config.anonKey);
+  // Check if we already have a client with the same credentials
+  if (supabaseClient && currentConfig) {
+    if (currentConfig.url === config.url && currentConfig.anonKey === config.anonKey) {
+      console.log('♻️ Reusing existing Supabase client');
+      return supabaseClient;
+    }
+  }
+  
+  // Create new client only if credentials changed or no client exists
+  console.log('🆕 Creating new Supabase client');
+  supabaseClient = createClient(config.url, config.anonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false,
+      storageKey: 'skyway-suites-auth', // Unique storage key to avoid conflicts
+    }
+  });
+  currentConfig = { ...config };
   return supabaseClient;
 };
 
@@ -34,6 +54,7 @@ export const isSupabaseConnected = (): boolean => {
  */
 export const disconnectSupabase = (): void => {
   supabaseClient = null;
+  currentConfig = null;
 };
 
 /**

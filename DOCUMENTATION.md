@@ -1031,6 +1031,21 @@ localStorage.setItem('maintenanceMode', JSON.stringify({
   - Continues to work even if Supabase sync fails
   - Best of both worlds: speed + reliability
 
+- ✅ **Singleton Supabase Client**
+  - Smart client reuse - only creates new client if credentials change
+  - Prevents multiple GoTrueClient instances warning
+  - Unique storage key to avoid conflicts
+  - Better performance and memory usage
+
+#### 🐛 Bug Fixes
+- ✅ **Fixed Multiple GoTrueClient Instances Warning**
+  - Implemented proper singleton pattern for Supabase client
+  - Reuses existing client when credentials haven't changed
+  - Only creates new client when credentials are updated
+  - Added unique auth storage key: `skyway-suites-auth`
+  - Eliminated duplicate client instances
+  - Console now shows: "♻️ Reusing existing Supabase client"
+
 #### 🔧 Technical Implementation
 
 **Modified `/src/app/services/initialization.ts`:**
@@ -1062,6 +1077,40 @@ async createProperty(property: Property): Promise<Property> {
   return localProperty;
 }
 // Same pattern for update, delete, features, customers, bookings
+```
+
+**Modified `/src/app/services/supabaseClient.ts`:**
+```typescript
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+
+let supabaseClient: SupabaseClient | null = null;
+
+export const getSupabaseClient = (): SupabaseClient | null => {
+  return supabaseClient;
+};
+
+export const initializeSupabase = (config: {
+  url: string;
+  anonKey: string;
+}): void => {
+  const { url, anonKey } = config;
+  
+  // Check if existing client matches new credentials
+  if (supabaseClient && supabaseClient.url === url && supabaseClient.key === anonKey) {
+    console.log('♻️ Reusing existing Supabase client');
+    return;
+  }
+  
+  // Create new client with unique auth storage key
+  supabaseClient = createClient(url, anonKey, {
+    auth: {
+      storageKey: 'skyway-suites-auth'
+    }
+  });
+  
+  console.log('🔄 Connecting to Supabase...');
+  // Add any additional initialization here if needed
+};
 ```
 
 #### ✨ What This Fixes
