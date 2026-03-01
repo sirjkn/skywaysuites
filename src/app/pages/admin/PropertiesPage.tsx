@@ -129,7 +129,7 @@ export const PropertiesPage = () => {
       dataUrl: img.url,
       isDefault: img.isDefault,
       uploadProgress: 100,
-      category: 'Living Room' // Default category, can be updated based on actual data
+      category: img.category || 'Living Room' // Use existing category or default to Living Room
     })));
     
     setDialogOpen(true);
@@ -290,6 +290,7 @@ export const PropertiesPage = () => {
         id: `img-${index}`,
         url: img.dataUrl,
         isDefault: img.isDefault,
+        category: img.category,
       })),
       available: formData.available,
     };

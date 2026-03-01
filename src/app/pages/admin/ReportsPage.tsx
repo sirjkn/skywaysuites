@@ -323,6 +323,8 @@ export const ReportsPage = () => {
                     <th className="px-6 py-3 text-left text-[#36454F]">Check In</th>
                     <th className="px-6 py-3 text-left text-[#36454F]">Check Out</th>
                     <th className="px-6 py-3 text-left text-[#36454F]">Total</th>
+                    <th className="px-6 py-3 text-left text-[#36454F]">Payment Method</th>
+                    <th className="px-6 py-3 text-left text-[#36454F]">Transaction ID</th>
                     <th className="px-6 py-3 text-left text-[#36454F]">Status</th>
                   </tr>
                 </thead>
@@ -341,6 +343,8 @@ export const ReportsPage = () => {
                           {new Date(booking.checkOut).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 text-[#6B7F39] font-semibold">Ksh {booking.totalPrice}</td>
+                        <td className="px-6 py-4 text-[#36454F]">{booking.paymentMethod || 'N/A'}</td>
+                        <td className="px-6 py-4 text-[#36454F] text-sm">{booking.transactionId || 'N/A'}</td>
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-sm ${
                             booking.status === 'confirmed' 

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Calendar, FileText, CreditCard, Smartphone } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
-import { getSettings, PaymentMethod } from '../services/api';
+import { getSettings, PaymentMethod, createBooking } from '../services/api';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -10,6 +10,7 @@ interface BookingModalProps {
   propertyName: string;
   propertyPrice: number;
   propertyId: string;
+  onBookingCreated?: () => void;
 }
 
 export const BookingModal = ({ 
@@ -17,16 +18,20 @@ export const BookingModal = ({
   onClose, 
   propertyName, 
   propertyPrice,
-  propertyId 
+  propertyId,
+  onBookingCreated
 }: BookingModalProps) => {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [additionalInfo, setAdditionalInfo] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
-  const [mpesaNumber, setMpesaNumber] = useState('');
+  const [transactionId, setTransactionId] = useState('');
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [customerName, setCustomerName] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
 
   useEffect(() => {
     const loadPaymentMethods = async () => {
@@ -95,35 +100,50 @@ export const BookingModal = ({
     // Check if M-Pesa is selected and validate phone number
     const selectedMethod = paymentMethods.find(pm => pm.id === paymentMethod);
     if (selectedMethod?.id === 'mpesa') {
-      if (!mpesaNumber) {
-        toast.error('Please enter your Mpesa number');
-        return;
-      }
-      // Validate Kenyan phone number format
-      const phoneRegex = /^(?:254|\+254|0)?(7[0-9]{8}|1[0-9]{8})$/;
-      if (!phoneRegex.test(mpesaNumber)) {
-        toast.error('Please enter a valid Kenyan phone number');
+      if (!transactionId) {
+        toast.error('Please enter your Mpesa transaction ID');
         return;
       }
     }
 
     setIsSubmitting(true);
 
-    // Simulate booking process
-    setTimeout(() => {
-      toast.success('Booking request submitted! Awaiting admin approval.');
-      console.log({
+    try {
+      // First, create or find customer
+      const { createCustomer, getCustomers } = await import('../services/api');
+      const customers = await getCustomers();
+      
+      // Check if customer already exists
+      let customer = customers.find(c => c.email === customerEmail);
+      
+      if (!customer) {
+        // Create new customer
+        customer = await createCustomer({
+          name: customerName,
+          email: customerEmail,
+          phone: customerPhone,
+          address: '',
+        });
+      }
+
+      // Get selected payment method name
+      const selectedPaymentMethod = paymentMethods.find(pm => pm.id === paymentMethod);
+
+      // Create booking with proper structure
+      const bookingData = {
         propertyId,
-        propertyName,
-        fromDate,
-        toDate,
-        nights,
+        customerId: customer.id,
+        checkIn: fromDate,
+        checkOut: toDate,
         totalPrice,
-        additionalInfo,
-        paymentMethod,
-        mpesaNumber,
-        status: 'pending', // All bookings start as pending
-      });
+        status: 'pending' as const,
+        paymentMethod: selectedPaymentMethod?.name || paymentMethod,
+        transactionId: transactionId || undefined,
+      };
+
+      await createBooking(bookingData);
+      toast.success('Booking request submitted! Awaiting admin approval.');
+      console.log('Booking created:', bookingData);
       setIsSubmitting(false);
       onClose();
       // Reset form
@@ -131,8 +151,18 @@ export const BookingModal = ({
       setToDate('');
       setAdditionalInfo('');
       setPaymentMethod('');
-      setMpesaNumber('');
-    }, 1500);
+      setTransactionId('');
+      setCustomerName('');
+      setCustomerEmail('');
+      setCustomerPhone('');
+      if (onBookingCreated) {
+        onBookingCreated();
+      }
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      toast.error('Failed to create booking');
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -231,24 +261,75 @@ export const BookingModal = ({
           {/* Mpesa Number */}
           {paymentMethods.find(pm => pm.id === paymentMethod)?.type === 'mpesa' && (
             <div className="animate-fade-in">
-              <label htmlFor="mpesaNumber" className="flex items-center gap-2 text-[#36454F] mb-2">
+              <label htmlFor="transactionId" className="flex items-center gap-2 text-[#36454F] mb-2">
                 <Smartphone className="w-4 h-4 text-[#6B7F39]" />
-                Mpesa Number
+                Mpesa Transaction ID
               </label>
               <input
                 type="text"
-                id="mpesaNumber"
-                value={mpesaNumber}
-                onChange={(e) => setMpesaNumber(e.target.value)}
-                placeholder="e.g., 0712345678 or 254712345678"
+                id="transactionId"
+                value={transactionId}
+                onChange={(e) => setTransactionId(e.target.value)}
+                placeholder="Enter your M-Pesa transaction ID"
                 className="w-full px-4 py-3 rounded-lg border border-[#6B7F39]/20 bg-input-background focus:outline-none focus:ring-2 focus:ring-[#6B7F39]/30 transition-all"
                 required
               />
               <p className="text-xs text-[#36454F]/60 mt-1">
-                Enter your M-Pesa registered phone number
+                Enter your M-Pesa transaction ID
               </p>
             </div>
           )}
+
+          {/* Customer Information */}
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="customerName" className="flex items-center gap-2 text-[#36454F] mb-2">
+                <FileText className="w-4 h-4 text-[#6B7F39]" />
+                Customer Name
+              </label>
+              <input
+                type="text"
+                id="customerName"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Enter customer name"
+                className="w-full px-4 py-3 rounded-lg border border-[#6B7F39]/20 bg-input-background focus:outline-none focus:ring-2 focus:ring-[#6B7F39]/30 transition-all"
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="customerEmail" className="flex items-center gap-2 text-[#36454F] mb-2">
+                <FileText className="w-4 h-4 text-[#6B7F39]" />
+                Customer Email
+              </label>
+              <input
+                type="email"
+                id="customerEmail"
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+                placeholder="Enter customer email"
+                className="w-full px-4 py-3 rounded-lg border border-[#6B7F39]/20 bg-input-background focus:outline-none focus:ring-2 focus:ring-[#6B7F39]/30 transition-all"
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="customerPhone" className="flex items-center gap-2 text-[#36454F] mb-2">
+                <FileText className="w-4 h-4 text-[#6B7F39]" />
+                Customer Phone
+              </label>
+              <input
+                type="text"
+                id="customerPhone"
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                placeholder="Enter customer phone"
+                className="w-full px-4 py-3 rounded-lg border border-[#6B7F39]/20 bg-input-background focus:outline-none focus:ring-2 focus:ring-[#6B7F39]/30 transition-all"
+                required
+              />
+            </div>
+          </div>
 
           {/* Booking Summary */}
           {nights > 0 && (

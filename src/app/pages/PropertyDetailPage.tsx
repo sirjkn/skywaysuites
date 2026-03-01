@@ -29,6 +29,8 @@ export const PropertyDetailPage = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [whatsappNumber, setWhatsappNumber] = useState('+254712345678');
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [activePhotoCategory, setActivePhotoCategory] = useState<string>('Living Room');
+  const [lightboxImages, setLightboxImages] = useState<Array<{id: string, url: string, category?: string}>>([]);
 
   useEffect(() => {
     const loadProperty = async () => {
@@ -93,20 +95,28 @@ export const PropertyDetailPage = () => {
   };
 
   const nextImage = () => {
-    if (property) {
-      setCurrentImageIndex((prev) => (prev + 1) % property.images.length);
+    if (property && property.images && property.images.length > 0) {
+      setCurrentImageIndex((prev) => {
+        const nextIndex = (prev + 1) % property.images.length;
+        return nextIndex;
+      });
     }
   };
 
   const prevImage = () => {
-    if (property) {
-      setCurrentImageIndex((prev) => (prev - 1 + property.images.length) % property.images.length);
+    if (property && property.images && property.images.length > 0) {
+      setCurrentImageIndex((prev) => {
+        const prevIndex = (prev - 1 + property.images.length) % property.images.length;
+        return prevIndex;
+      });
     }
   };
 
   const openLightbox = (index: number) => {
-    setCurrentImageIndex(index);
-    setIsLightboxOpen(true);
+    if (property && index >= 0 && index < property.images.length) {
+      setCurrentImageIndex(index);
+      setIsLightboxOpen(true);
+    }
   };
 
   const closeLightbox = () => {
@@ -171,42 +181,6 @@ export const PropertyDetailPage = () => {
             </div>
           </div>
         </div>
-
-        {/* Image Gallery */}
-        <div className="relative h-[500px] bg-[#36454F]">
-          <img
-            src={property.images[currentImageIndex]?.url}
-            alt={property.name}
-            className="w-full h-full object-cover"
-          />
-        </div>
-
-        {/* Image Thumbnails */}
-        {property.images.length > 1 && (
-          <div className="bg-white border-b border-[#6B7F39]/20 py-4">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                {property.images.map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => openLightbox(index)}
-                    className={`flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden transition-all border-2 ${
-                      index === currentImageIndex 
-                        ? 'border-[#6B7F39] shadow-lg scale-105' 
-                        : 'border-transparent hover:border-[#6B7F39]/50 opacity-70 hover:opacity-100'
-                    }`}
-                  >
-                    <img
-                      src={image.url}
-                      alt={`${property.name} - Image ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -274,6 +248,98 @@ export const PropertyDetailPage = () => {
                   <p className="text-sm text-[#36454F]/70">sqft</p>
                 </div>
               </div>
+
+              {/* Categorized Photos Section */}
+              {property.images && property.images.length > 0 && (() => {
+                // Define all available categories in order
+                const categories = ['Living Room', 'Bedroom', 'Dining', 'Kitchen', 'Bathroom', 'Amenities'] as const;
+                
+                // Filter images based on selected category - ensure images have categories
+                const filteredImages = property.images.filter(img => 
+                  img && img.category && img.category === activePhotoCategory
+                );
+
+                return (
+                  <div className="mb-8">
+                    <h2 className="text-2xl font-bold text-[#36454F] mb-4">Photo Gallery</h2>
+                    
+                    {/* Category Tabs - Always show all categories */}
+                    <div className="border-b border-gray-200 mb-6">
+                      <div className="flex gap-0 overflow-x-auto scrollbar-hide">
+                        {categories.map((category) => (
+                          <button
+                            key={category}
+                            onClick={() => setActivePhotoCategory(category)}
+                            className={`px-6 py-3 font-medium whitespace-nowrap transition-all border-r border-gray-200 last:border-r-0 ${
+                              activePhotoCategory === category
+                                ? 'bg-[#36454F] text-white'
+                                : 'bg-white text-[#36454F] hover:bg-gray-50'
+                            }`}
+                          >
+                            {category}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Photo Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {filteredImages.length > 0 ? (
+                        filteredImages.map((image) => {
+                          // Ensure image exists and has an id
+                          if (!image || !image.id || !image.url) return null;
+                          
+                          // Find the original index in the full images array
+                          const originalIndex = property.images.findIndex(img => img && img.id === image.id);
+                          
+                          // Safety check: don't render if index is invalid
+                          if (originalIndex === -1 || originalIndex >= property.images.length) {
+                            return null;
+                          }
+                          
+                          return (
+                            <button
+                              key={`${image.id}-${originalIndex}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                openLightbox(originalIndex);
+                              }}
+                              className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer border border-gray-200 hover:border-[#6B7F39] transition-colors"
+                            >
+                              <img
+                                src={image.url}
+                                alt={image.category || `Photo ${originalIndex + 1}`}
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                onError={(e) => {
+                                  // Handle image load errors gracefully
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                              {/* Category Badge - Only show if image has category */}
+                              {image.category && (
+                                <div className="absolute top-2 left-2 bg-[#36454F]/90 text-white text-xs px-2 py-1 rounded">
+                                  {image.category}
+                                </div>
+                              )}
+                              {/* Overlay on hover */}
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                <span className="text-white font-medium text-sm">
+                                  View Photo
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <div className="col-span-full text-center py-12 text-[#36454F]/60">
+                          No photos in this category
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Description */}
               <div>
@@ -370,11 +436,19 @@ export const PropertyDetailPage = () => {
           propertyName={property.name}
           propertyPrice={property.price}
           propertyId={property.id}
+          onBookingCreated={() => {
+            // Reload property data to reflect booking changes
+            if (id) {
+              getPropertyById(id).then(data => {
+                if (data) setProperty(data);
+              });
+            }
+          }}
         />
       )}
 
       {/* Image Lightbox Modal */}
-      {isLightboxOpen && (
+      {isLightboxOpen && property.images.length > 0 && property.images[currentImageIndex] && (
         <div 
           className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center"
           onClick={closeLightbox}
@@ -415,7 +489,7 @@ export const PropertyDetailPage = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <img
-              src={property.images[currentImageIndex]?.url}
+              src={property.images[currentImageIndex].url}
               alt={`${property.name} - Image ${currentImageIndex + 1}`}
               className="max-w-full max-h-full object-contain rounded-lg"
             />

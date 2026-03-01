@@ -37,6 +37,19 @@ const DEFAULT_SUPABASE_CONFIG = {
  */
 export const initializeApp = async (): Promise<void> => {
   try {
+    // Initialize default WhatsApp settings if not present
+    const whatsappSettings = localStorage.getItem('contactDetailsSettings');
+    if (!whatsappSettings) {
+      const defaultWhatsAppSettings = {
+        enabled: true,
+        phoneNumber: '+254712345678',
+        email: 'info@skywaysuites.com',
+        message: 'Hello! I would like to inquire about your properties.',
+      };
+      localStorage.setItem('contactDetailsSettings', JSON.stringify(defaultWhatsAppSettings));
+      console.log('✅ Default WhatsApp settings initialized');
+    }
+
     // Initialize Supabase - check for saved credentials first, otherwise use defaults
     const databaseSettings = localStorage.getItem('databaseSettings');
     let supabaseConfig = DEFAULT_SUPABASE_CONFIG;

@@ -89,7 +89,7 @@ export const syncNow = async (): Promise<{ success: boolean; message: string; de
 };
 
 /**
- * Start auto-sync every 10 seconds
+ * Start auto-sync every 5 seconds for faster data synchronization
  */
 export const startAutoSync = (onSync: (lastSyncTime: Date) => void) => {
   if (syncInterval) {
@@ -101,7 +101,7 @@ export const startAutoSync = (onSync: (lastSyncTime: Date) => void) => {
     onSync(new Date());
   });
 
-  // Set up 10-second interval
+  // Set up 5-second interval for faster syncing
   syncInterval = setInterval(async () => {
     const result = await syncNow();
     if (result.success) {
@@ -110,7 +110,7 @@ export const startAutoSync = (onSync: (lastSyncTime: Date) => void) => {
     } else {
       console.error('❌ Auto-sync failed:', result.message);
     }
-  }, 10000); // 10 seconds
+  }, 5000); // 5 seconds for faster sync
 
   return syncInterval;
 };

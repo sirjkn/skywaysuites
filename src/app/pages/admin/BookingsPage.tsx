@@ -54,7 +54,8 @@ export const BookingsPage = () => {
       await updateBookingStatus(bookingId, 'confirmed');
       toast.success('Booking approved successfully!');
       setConfirmDialog(null);
-      loadData();
+      // Force immediate refresh
+      await loadData();
     } catch (error) {
       console.error('Error approving booking:', error);
       toast.error('Failed to approve booking');
@@ -66,7 +67,8 @@ export const BookingsPage = () => {
       await updateBookingStatus(bookingId, 'cancelled');
       toast.success('Booking cancelled successfully!');
       setConfirmDialog(null);
-      loadData();
+      // Force immediate refresh
+      await loadData();
     } catch (error) {
       console.error('Error cancelling booking:', error);
       toast.error('Failed to cancel booking');
@@ -216,6 +218,7 @@ export const BookingsPage = () => {
                 <th className="px-6 py-3 text-left text-[#36454F] font-semibold">Check Out</th>
                 <th className="px-6 py-3 text-left text-[#36454F] font-semibold">Nights</th>
                 <th className="px-6 py-3 text-left text-[#36454F] font-semibold">Total</th>
+                <th className="px-6 py-3 text-left text-[#36454F] font-semibold">Payment</th>
                 <th className="px-6 py-3 text-left text-[#36454F] font-semibold">Status</th>
                 <th className="px-6 py-3 text-left text-[#36454F] font-semibold">Actions</th>
               </tr>
@@ -223,7 +226,7 @@ export const BookingsPage = () => {
             <tbody className="divide-y divide-gray-200">
               {filteredBookings.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-8 text-center text-[#7F8C8D]">
+                  <td colSpan={10} className="px-6 py-8 text-center text-[#7F8C8D]">
                     No bookings found
                   </td>
                 </tr>
@@ -254,6 +257,14 @@ export const BookingsPage = () => {
                       </td>
                       <td className="px-6 py-4 text-[#36454F]">{nights}</td>
                       <td className="px-6 py-4 text-[#6B7F39] font-semibold">Ksh {booking.totalPrice.toLocaleString()}</td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm">
+                          <div className="font-medium text-[#2C3E50]">{booking.paymentMethod || 'N/A'}</div>
+                          {booking.transactionId && (
+                            <div className="text-xs text-[#7F8C8D]">ID: {booking.transactionId}</div>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-6 py-4">
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-semibold ${

@@ -64,6 +64,8 @@ export interface Booking {
   checkOut: string;
   totalPrice: number;
   status: 'pending' | 'confirmed' | 'cancelled';
+  paymentMethod?: string;
+  transactionId?: string;
   createdAt: string;
 }
 
@@ -528,8 +530,10 @@ export const login = async (email: string, password: string): Promise<User> => {
   console.log('Login attempt for:', email);
   console.log('Available users:', appUsers.map((u: any) => ({ email: u.email, role: u.role })));
   
-  // Find user with matching email and password
-  const user = appUsers.find((u: any) => u.email === email && u.password === password);
+  // Find user with matching email (case-insensitive) and password
+  const user = appUsers.find((u: any) => 
+    u.email.toLowerCase() === email.toLowerCase() && u.password === password
+  );
   
   if (user) {
     console.log('Login successful for:', email, 'Role:', user.role);
@@ -556,8 +560,8 @@ export const register = async (email: string, password: string, name: string, ph
   // Check if user already exists in app_users
   const appUsers = await storageService.getAppUsers();
   
-  // Check for existing email in app_users
-  if (appUsers.some((u: any) => u.email === email)) {
+  // Check for existing email in app_users (case-insensitive)
+  if (appUsers.some((u: any) => u.email.toLowerCase() === email.toLowerCase())) {
     throw new Error('User with this email already exists');
   }
   

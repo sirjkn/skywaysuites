@@ -128,6 +128,8 @@ CREATE TABLE IF NOT EXISTS bookings (
   "checkOut" TEXT NOT NULL,
   "totalPrice" NUMERIC NOT NULL,
   status TEXT DEFAULT 'pending',
+  "paymentMethod" TEXT,
+  "transactionId" TEXT,
   "createdAt" TIMESTAMP DEFAULT NOW()
 );
 
@@ -292,6 +294,7 @@ CREATE POLICY "Allow public delete" ON app_users FOR DELETE USING (true);
 
 /**
  * Migrate all localStorage data to Supabase
+ * Optimized for faster sync with parallel batch operations
  */
 export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> => {
   const supabase = getSupabaseClient();
@@ -316,7 +319,7 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
       sliderSettings: 0,
     };
 
-    // Use Promise.allSettled for parallel execution with error handling
+    // Use Promise.all for parallel execution - much faster
     const migrations = [];
 
     // Migrate Properties
@@ -325,13 +328,12 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
       const properties: Property[] = JSON.parse(propertiesData);
       if (properties.length > 0) {
         migrations.push(
-          supabase.from('properties').upsert(properties).then(({ error, count }) => {
+          supabase.from('properties').upsert(properties, { onConflict: 'id' }).then(({ error, count }) => {
             if (!error) {
               results.properties = properties.length;
-              console.log(`✅ Synced ${properties.length} properties (including status: available/availableAfter)`);
+              console.log(`✅ Synced ${properties.length} properties`);
             } else {
               console.error('❌ Properties sync error:', error);
-              console.error('❌ Error details:', JSON.stringify(error, null, 2));
             }
           })
         );
@@ -344,7 +346,7 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
       const features: Feature[] = JSON.parse(featuresData);
       if (features.length > 0) {
         migrations.push(
-          supabase.from('features').upsert(features).then(({ error }) => {
+          supabase.from('features').upsert(features, { onConflict: 'id' }).then(({ error }) => {
             if (!error) results.features = features.length;
           })
         );
@@ -357,23 +359,23 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
       const customers: Customer[] = JSON.parse(customersData);
       if (customers.length > 0) {
         migrations.push(
-          supabase.from('customers').upsert(customers).then(({ error }) => {
+          supabase.from('customers').upsert(customers, { onConflict: 'id' }).then(({ error }) => {
             if (!error) results.customers = customers.length;
           })
         );
       }
     }
 
-    // Migrate Bookings
+    // Migrate Bookings - CRITICAL for booking functionality
     const bookingsData = localStorage.getItem('bookings');
     if (bookingsData) {
       const bookings: Booking[] = JSON.parse(bookingsData);
       if (bookings.length > 0) {
         migrations.push(
-          supabase.from('bookings').upsert(bookings).then(({ error }) => {
+          supabase.from('bookings').upsert(bookings, { onConflict: 'id' }).then(({ error }) => {
             if (!error) {
               results.bookings = bookings.length;
-              console.log(`✅ Synced ${bookings.length} bookings (including all statuses: pending/confirmed/cancelled)`);
+              console.log(`✅ Synced ${bookings.length} bookings`);
             } else {
               console.error('❌ Bookings sync error:', error);
             }
@@ -388,7 +390,7 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
       const payments: Payment[] = JSON.parse(paymentsData);
       if (payments.length > 0) {
         migrations.push(
-          supabase.from('payments').upsert(payments).then(({ error }) => {
+          supabase.from('payments').upsert(payments, { onConflict: 'id' }).then(({ error }) => {
             if (!error) results.payments = payments.length;
           })
         );
@@ -401,7 +403,7 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
       const menuPages: MenuPage[] = JSON.parse(menuPagesData);
       if (menuPages.length > 0) {
         migrations.push(
-          supabase.from('menu_pages').upsert(menuPages).then(({ error }) => {
+          supabase.from('menu_pages').upsert(menuPages, { onConflict: 'id' }).then(({ error }) => {
             if (!error) results.menuPages = menuPages.length;
           })
         );
@@ -414,7 +416,7 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
       const appUsers = JSON.parse(appUsersData);
       if (appUsers.length > 0) {
         migrations.push(
-          supabase.from('app_users').upsert(appUsers).then(({ error }) => {
+          supabase.from('app_users').upsert(appUsers, { onConflict: 'id' }).then(({ error }) => {
             if (!error) results.appUsers = appUsers.length;
           })
         );
@@ -429,13 +431,13 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
         supabase.from('general_settings').upsert({
           id: 'default',
           ...generalSettings,
-        }).then(({ error }) => {
+        }, { onConflict: 'id' }).then(({ error }) => {
           if (!error) results.generalSettings = 1;
         })
       );
     }
 
-    // Migrate Theme Settings (if exists)
+    // Migrate Theme Settings
     const themeSettingsData = localStorage.getItem('themeSettings');
     if (themeSettingsData) {
       const themeSettings = JSON.parse(themeSettingsData);
@@ -443,13 +445,13 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
         supabase.from('theme_settings').upsert({
           id: 'default',
           ...themeSettings,
-        }).then(({ error }) => {
+        }, { onConflict: 'id' }).then(({ error }) => {
           if (!error) results.themeSettings = 1;
         })
       );
     }
 
-    // Migrate SMS Settings (if exists)
+    // Migrate SMS Settings
     const smsSettingsData = localStorage.getItem('smsSettings');
     if (smsSettingsData) {
       const smsSettings = JSON.parse(smsSettingsData);
@@ -457,13 +459,13 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
         supabase.from('sms_settings').upsert({
           id: 'default',
           ...smsSettings,
-        }).then(({ error }) => {
+        }, { onConflict: 'id' }).then(({ error }) => {
           if (!error) results.smsSettings = 1;
         })
       );
     }
 
-    // Migrate Payment Settings (if exists)
+    // Migrate Payment Settings
     const paymentSettingsData = localStorage.getItem('paymentSettings');
     if (paymentSettingsData) {
       const paymentSettings = JSON.parse(paymentSettingsData);
@@ -471,7 +473,7 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
         supabase.from('payment_settings').upsert({
           id: 'default',
           ...paymentSettings,
-        }).then(({ error }) => {
+        }, { onConflict: 'id' }).then(({ error }) => {
           if (!error) results.paymentSettings = 1;
         })
       );
@@ -485,7 +487,7 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
         supabase.from('whatsapp_settings').upsert({
           id: 'default',
           ...whatsappSettings,
-        }).then(({ error }) => {
+        }, { onConflict: 'id' }).then(({ error }) => {
           if (!error) results.whatsappSettings = 1;
         })
       );
@@ -501,22 +503,15 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
           order: index,
         }));
         migrations.push(
-          supabase.from('slider_settings').upsert(slides).then(({ error }) => {
+          supabase.from('slider_settings').upsert(slides, { onConflict: 'id' }).then(({ error }) => {
             if (!error) results.sliderSettings = slides.length;
           })
         );
       }
     }
 
-    // Execute all migrations in parallel with 30 second timeout
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Migration timeout after 30 seconds')), 30000)
-    );
-
-    await Promise.race([
-      Promise.allSettled(migrations),
-      timeoutPromise
-    ]);
+    // Execute all migrations in parallel
+    await Promise.all(migrations);
 
     return {
       success: true,
