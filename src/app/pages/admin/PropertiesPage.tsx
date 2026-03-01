@@ -30,6 +30,7 @@ interface ImageUpload {
   dataUrl: string;
   isDefault: boolean;
   uploadProgress: number;
+  category: 'Living Room' | 'Bedroom' | 'Dining' | 'Kitchen' | 'Bathroom' | 'Amenities';
 }
 
 export const PropertiesPage = () => {
@@ -43,6 +44,7 @@ export const PropertiesPage = () => {
   const [locationsModalOpen, setLocationsModalOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [uploadingImages, setUploadingImages] = useState<ImageUpload[]>([]);
+  const [selectedImageCategory, setSelectedImageCategory] = useState<'Living Room' | 'Bedroom' | 'Dining' | 'Kitchen' | 'Bathroom' | 'Amenities'>('Living Room');
   const [formData, setFormData] = useState({
     name: '',
     price: '',
@@ -127,6 +129,7 @@ export const PropertiesPage = () => {
       dataUrl: img.url,
       isDefault: img.isDefault,
       uploadProgress: 100,
+      category: 'Living Room' // Default category, can be updated based on actual data
     })));
     
     setDialogOpen(true);
@@ -174,6 +177,7 @@ export const PropertiesPage = () => {
         dataUrl: '',
         isDefault: uploadingImages.length === 0,
         uploadProgress: 0,
+        category: selectedImageCategory
       };
       
       setUploadingImages(prev => [...prev, newImage]);
@@ -556,7 +560,31 @@ export const PropertiesPage = () => {
             {/* Image Upload */}
             <div>
               <Label>Property Images (Max 5MB each)</Label>
-              <div className="mt-2 space-y-4">
+              
+              {/* Category Tabs */}
+              <div className="mt-3 flex flex-wrap gap-2">
+                {(['Living Room', 'Bedroom', 'Dining', 'Kitchen', 'Bathroom', 'Amenities'] as const).map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setSelectedImageCategory(cat)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      selectedImageCategory === cat
+                        ? 'bg-[#6B7F39] text-white'
+                        : 'bg-gray-100 text-[#2C3E50] hover:bg-gray-200'
+                    }`}
+                  >
+                    {cat}
+                    {uploadingImages.filter(img => img.category === cat).length > 0 && (
+                      <span className="ml-2 px-2 py-0.5 rounded-full bg-white/20 text-xs">
+                        {uploadingImages.filter(img => img.category === cat).length}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-3 space-y-4">
                 {/* Upload Button */}
                 <div>
                   <input
@@ -572,67 +600,78 @@ export const PropertiesPage = () => {
                     className="inline-flex items-center px-4 py-2 border border-[#6B7F39] rounded-lg cursor-pointer hover:bg-[#6B7F39] hover:text-white transition-colors text-[#6B7F39] font-medium"
                   >
                     <Upload className="w-4 h-4 mr-2" />
-                    Upload Images (Multiple)
+                    Upload to {selectedImageCategory}
                   </label>
                   <p className="text-xs text-[#7F8C8D] mt-1">
-                    💡 You can select multiple images at once. Images will be automatically compressed and converted to WebP format.
+                    💡 Currently uploading to: <strong>{selectedImageCategory}</strong>. Select multiple images at once.
                   </p>
                 </div>
 
-                {/* Image Previews */}
-                {uploadingImages.length > 0 && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {uploadingImages.map((image, index) => (
-                      <div key={index} className="relative group">
-                        <div className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200">
-                          {image.dataUrl ? (
-                            <img
-                              src={image.dataUrl}
-                              alt={`Upload ${index + 1}`}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                              <div className="text-center">
-                                <div className="text-sm text-[#7F8C8D]">
-                                  {image.uploadProgress}%
+                {/* Image Previews - Grouped by Category */}
+                {(['Living Room', 'Bedroom', 'Dining', 'Kitchen', 'Bathroom', 'Amenities'] as const).map((cat) => {
+                  const categoryImages = uploadingImages
+                    .map((img, idx) => ({ img, idx }))
+                    .filter(({ img }) => img.category === cat);
+                  
+                  if (categoryImages.length === 0) return null;
+
+                  return (
+                    <div key={cat} className="border border-gray-200 rounded-lg p-4">
+                      <h4 className="text-sm font-semibold text-[#2C3E50] mb-3">{cat} ({categoryImages.length})</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {categoryImages.map(({ img: image, idx: index }) => (
+                          <div key={index} className="relative group">
+                            <div className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200">
+                              {image.dataUrl ? (
+                                <img
+                                  src={image.dataUrl}
+                                  alt={`${cat} ${index + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                                  <div className="text-center">
+                                    <div className="text-sm text-[#7F8C8D]">
+                                      {image.uploadProgress}%
+                                    </div>
+                                    <div className="w-16 h-1 bg-gray-200 rounded-full mt-2 overflow-hidden">
+                                      <div 
+                                        className="h-full bg-[#6B7F39] transition-all"
+                                        style={{ width: `${image.uploadProgress}%` }}
+                                      />
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="w-16 h-1 bg-gray-200 rounded-full mt-2 overflow-hidden">
-                                  <div 
-                                    className="h-full bg-[#6B7F39] transition-all"
-                                    style={{ width: `${image.uploadProgress}%` }}
-                                  />
-                                </div>
-                              </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                        {image.uploadProgress === 100 && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => removeImage(index)}
-                              className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setDefaultImage(index)}
-                              className={`absolute bottom-2 left-2 right-2 py-1 px-2 text-xs rounded ${
-                                image.isDefault
-                                  ? 'bg-[#6B7F39] text-white'
-                                  : 'bg-white text-[#6B7F39] opacity-0 group-hover:opacity-100'
-                              } transition-opacity`}
-                            >
-                              {image.isDefault ? 'Default' : 'Set as Default'}
-                            </button>
-                          </>
-                        )}
+                            {image.uploadProgress === 100 && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => removeImage(index)}
+                                  className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setDefaultImage(index)}
+                                  className={`absolute bottom-2 left-2 right-2 py-1 px-2 text-xs rounded ${
+                                    image.isDefault
+                                      ? 'bg-[#6B7F39] text-white'
+                                      : 'bg-white text-[#6B7F39] opacity-0 group-hover:opacity-100'
+                                  } transition-opacity`}
+                                >
+                                  {image.isDefault ? 'Default' : 'Set as Default'}
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 

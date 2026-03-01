@@ -30,6 +30,7 @@ export interface PropertyImage {
   id: string;
   url: string;
   isDefault: boolean;
+  category?: 'Living Room' | 'Bedroom' | 'Dining' | 'Kitchen' | 'Bathroom' | 'Amenities';
 }
 
 export interface Feature {
