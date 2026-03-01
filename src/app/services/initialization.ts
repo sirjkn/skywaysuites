@@ -23,36 +23,71 @@ const DEFAULT_ADMIN: AppUser = {
 };
 
 /**
+ * Default Supabase credentials
+ * Users can override these in Settings > Database
+ */
+const DEFAULT_SUPABASE_CONFIG = {
+  url: 'https://kxsavebrzaczjscyroth.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4c2F2ZWJyemFjempzY3lyb3RoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNTgyODksImV4cCI6MjA4NzkzNDI4OX0.DacfUFOOnZX0l5lv3keyPcjRGT7phS28l-4AZlIjFVM'
+};
+
+/**
  * Initialize the application with default data
  * This ensures the default admin user exists and Supabase is connected
  */
 export const initializeApp = async (): Promise<void> => {
   try {
-    // Initialize Supabase if credentials are saved
+    // Initialize Supabase - check for saved credentials first, otherwise use defaults
     const databaseSettings = localStorage.getItem('databaseSettings');
+    let supabaseConfig = DEFAULT_SUPABASE_CONFIG;
+    
     if (databaseSettings) {
       try {
         const settings = JSON.parse(databaseSettings);
         if (settings.supabaseUrl && settings.supabaseAnonKey) {
-          console.log('🔄 Auto-connecting to Supabase...');
-          initializeSupabase({
+          // Use saved credentials
+          supabaseConfig = {
             url: settings.supabaseUrl,
             anonKey: settings.supabaseAnonKey,
-          });
-          console.log('✅ Supabase auto-connected successfully');
-          
-          // Pull data from Supabase to localStorage
-          console.log('🔄 Pulling latest data from Supabase...');
-          const syncResult = await syncSupabaseToLocalStorage();
-          if (syncResult.success) {
-            console.log('✅ Data synced from Supabase to localStorage');
-          } else {
-            console.warn('⚠️ Failed to sync from Supabase:', syncResult.message);
-          }
+          };
+          console.log('🔄 Using saved Supabase credentials...');
+        } else {
+          // Save default credentials if none exist
+          console.log('🔄 Using default Supabase credentials...');
+          localStorage.setItem('databaseSettings', JSON.stringify({
+            supabaseUrl: DEFAULT_SUPABASE_CONFIG.url,
+            supabaseAnonKey: DEFAULT_SUPABASE_CONFIG.anonKey,
+          }));
         }
       } catch (error) {
-        console.error('❌ Failed to auto-connect Supabase:', error);
+        console.warn('⚠️ Error reading saved credentials, using defaults:', error);
+        // Save default credentials
+        localStorage.setItem('databaseSettings', JSON.stringify({
+          supabaseUrl: DEFAULT_SUPABASE_CONFIG.url,
+          supabaseAnonKey: DEFAULT_SUPABASE_CONFIG.anonKey,
+        }));
       }
+    } else {
+      // No saved credentials, save and use defaults
+      console.log('🔄 No saved credentials found, using defaults...');
+      localStorage.setItem('databaseSettings', JSON.stringify({
+        supabaseUrl: DEFAULT_SUPABASE_CONFIG.url,
+        supabaseAnonKey: DEFAULT_SUPABASE_CONFIG.anonKey,
+      }));
+    }
+    
+    // Connect to Supabase
+    console.log('🔄 Connecting to Supabase...');
+    initializeSupabase(supabaseConfig);
+    console.log('✅ Supabase connected successfully');
+    
+    // Pull data from Supabase to localStorage
+    console.log('🔄 Pulling latest data from Supabase...');
+    const syncResult = await syncSupabaseToLocalStorage();
+    if (syncResult.success) {
+      console.log('✅ Data synced from Supabase to localStorage');
+    } else {
+      console.warn('⚠️ Failed to sync from Supabase:', syncResult.message);
     }
 
     // Get existing app users

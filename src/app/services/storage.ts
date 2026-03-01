@@ -61,24 +61,58 @@ export class StorageService {
   }
 
   async createProperty(property: Property): Promise<Property> {
-    if (this.storageType === 'remote') {
-      return this.createPropertyRemote(property);
+    // Always save to local first
+    const localProperty = this.createPropertyLocal(property);
+    
+    // Then sync to Supabase if connected
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        await this.createPropertyRemote(property);
+        console.log('✅ Property synced to Supabase');
+      } catch (error) {
+        console.error('❌ Error syncing property to Supabase:', error);
+        // Continue even if remote sync fails
+      }
     }
-    return this.createPropertyLocal(property);
+    
+    return localProperty;
   }
 
   async updateProperty(id: string, property: Partial<Property>): Promise<Property> {
-    if (this.storageType === 'remote') {
-      return this.updatePropertyRemote(id, property);
+    // Always update local first
+    const localProperty = this.updatePropertyLocal(id, property);
+    
+    // Then sync to Supabase if connected
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        await this.updatePropertyRemote(id, property);
+        console.log('✅ Property update synced to Supabase');
+      } catch (error) {
+        console.error('❌ Error syncing property update to Supabase:', error);
+        // Continue even if remote sync fails
+      }
     }
-    return this.updatePropertyLocal(id, property);
+    
+    return localProperty;
   }
 
   async deleteProperty(id: string): Promise<void> {
-    if (this.storageType === 'remote') {
-      return this.deletePropertyRemote(id);
+    // Always delete from local first
+    this.deletePropertyLocal(id);
+    
+    // Then sync to Supabase if connected
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        await this.deletePropertyRemote(id);
+        console.log('✅ Property deletion synced to Supabase');
+      } catch (error) {
+        console.error('❌ Error syncing property deletion to Supabase:', error);
+        // Continue even if remote sync fails
+      }
     }
-    return this.deletePropertyLocal(id);
   }
 
   // Features
@@ -90,24 +124,55 @@ export class StorageService {
   }
 
   async createFeature(feature: Feature): Promise<Feature> {
-    if (this.storageType === 'remote') {
-      return this.createFeatureRemote(feature);
+    // Always save to local first
+    const localFeature = this.createFeatureLocal(feature);
+    
+    // Then sync to Supabase if connected
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        await this.createFeatureRemote(feature);
+        console.log('✅ Feature synced to Supabase');
+      } catch (error) {
+        console.error('❌ Error syncing feature to Supabase:', error);
+      }
     }
-    return this.createFeatureLocal(feature);
+    
+    return localFeature;
   }
 
   async updateFeature(id: string, feature: Partial<Feature>): Promise<Feature> {
-    if (this.storageType === 'remote') {
-      return this.updateFeatureRemote(id, feature);
+    // Always update local first
+    const localFeature = this.updateFeatureLocal(id, feature);
+    
+    // Then sync to Supabase if connected
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        await this.updateFeatureRemote(id, feature);
+        console.log('✅ Feature update synced to Supabase');
+      } catch (error) {
+        console.error('❌ Error syncing feature update to Supabase:', error);
+      }
     }
-    return this.updateFeatureLocal(id, feature);
+    
+    return localFeature;
   }
 
   async deleteFeature(id: string): Promise<void> {
-    if (this.storageType === 'remote') {
-      return this.deleteFeatureRemote(id);
+    // Always delete from local first
+    this.deleteFeatureLocal(id);
+    
+    // Then sync to Supabase if connected
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        await this.deleteFeatureRemote(id);
+        console.log('✅ Feature deletion synced to Supabase');
+      } catch (error) {
+        console.error('❌ Error syncing feature deletion to Supabase:', error);
+      }
     }
-    return this.deleteFeatureLocal(id);
   }
 
   // Customers
@@ -119,24 +184,55 @@ export class StorageService {
   }
 
   async createCustomer(customer: Customer): Promise<Customer> {
-    if (this.storageType === 'remote') {
-      return this.createCustomerRemote(customer);
+    // Always save to local first
+    const localCustomer = this.createCustomerLocal(customer);
+    
+    // Then sync to Supabase if connected
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        await this.createCustomerRemote(customer);
+        console.log('✅ Customer synced to Supabase');
+      } catch (error) {
+        console.error('❌ Error syncing customer to Supabase:', error);
+      }
     }
-    return this.createCustomerLocal(customer);
+    
+    return localCustomer;
   }
 
   async updateCustomer(id: string, customer: Partial<Customer>): Promise<Customer> {
-    if (this.storageType === 'remote') {
-      return this.updateCustomerRemote(id, customer);
+    // Always update local first
+    const localCustomer = this.updateCustomerLocal(id, customer);
+    
+    // Then sync to Supabase if connected
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        await this.updateCustomerRemote(id, customer);
+        console.log('✅ Customer update synced to Supabase');
+      } catch (error) {
+        console.error('❌ Error syncing customer update to Supabase:', error);
+      }
     }
-    return this.updateCustomerLocal(id, customer);
+    
+    return localCustomer;
   }
 
   async deleteCustomer(id: string): Promise<void> {
-    if (this.storageType === 'remote') {
-      return this.deleteCustomerRemote(id);
+    // Always delete from local first
+    this.deleteCustomerLocal(id);
+    
+    // Then sync to Supabase if connected
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        await this.deleteCustomerRemote(id);
+        console.log('✅ Customer deletion synced to Supabase');
+      } catch (error) {
+        console.error('❌ Error syncing customer deletion to Supabase:', error);
+      }
     }
-    return this.deleteCustomerLocal(id);
   }
 
   // Bookings
@@ -148,24 +244,55 @@ export class StorageService {
   }
 
   async createBooking(booking: Booking): Promise<Booking> {
-    if (this.storageType === 'remote') {
-      return this.createBookingRemote(booking);
+    // Always save to local first
+    const localBooking = this.createBookingLocal(booking);
+    
+    // Then sync to Supabase if connected
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        await this.createBookingRemote(booking);
+        console.log('✅ Booking synced to Supabase');
+      } catch (error) {
+        console.error('❌ Error syncing booking to Supabase:', error);
+      }
     }
-    return this.createBookingLocal(booking);
+    
+    return localBooking;
   }
 
   async updateBooking(id: string, booking: Partial<Booking>): Promise<Booking> {
-    if (this.storageType === 'remote') {
-      return this.updateBookingRemote(id, booking);
+    // Always update local first
+    const localBooking = this.updateBookingLocal(id, booking);
+    
+    // Then sync to Supabase if connected
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        await this.updateBookingRemote(id, booking);
+        console.log('✅ Booking update synced to Supabase');
+      } catch (error) {
+        console.error('❌ Error syncing booking update to Supabase:', error);
+      }
     }
-    return this.updateBookingLocal(id, booking);
+    
+    return localBooking;
   }
 
   async deleteBooking(id: string): Promise<void> {
-    if (this.storageType === 'remote') {
-      return this.deleteBookingRemote(id);
+    // Always delete from local first
+    this.deleteBookingLocal(id);
+    
+    // Then sync to Supabase if connected
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        await this.deleteBookingRemote(id);
+        console.log('✅ Booking deletion synced to Supabase');
+      } catch (error) {
+        console.error('❌ Error syncing booking deletion to Supabase:', error);
+      }
     }
-    return this.deleteBookingLocal(id);
   }
 
   // Payments

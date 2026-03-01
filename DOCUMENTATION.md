@@ -1,6 +1,6 @@
 # Skyway Suites - Complete Documentation
 
-**Version:** v1.81  
+**Version:** v1.82  
 **Last Updated:** March 1, 2026  
 **Project Type:** Property Listing & Management Platform  
 **Tech Stack:** React + TypeScript + Supabase + Tailwind CSS v4
@@ -1007,7 +1007,152 @@ localStorage.setItem('maintenanceMode', JSON.stringify({
 
 ## Version History
 
-### v1.81 (Current) - March 1, 2026
+### v1.82 (Current) - March 1, 2026
+**Major Update: Auto-Connect Supabase + Real-Time Sync**
+
+#### 🚀 New Features
+- ✅ **Default Supabase Connection**
+  - App now connects to Supabase automatically on every load
+  - Pre-configured with default database credentials
+  - Users can override credentials in Settings > Database
+  - No manual setup required - works out of the box
+  
+- ✅ **Real-Time Auto-Sync to Supabase**
+  - All CRUD operations now automatically sync to Supabase
+  - **Properties**: Create/Update/Delete instantly syncs
+  - **Features**: All operations sync automatically
+  - **Customers**: Real-time sync to cloud
+  - **Bookings**: Immediate cloud backup
+  - Console logging for sync status verification
+  
+- ✅ **Hybrid Storage Strategy**
+  - Always saves to localStorage first (instant + offline support)
+  - Then automatically syncs to Supabase (cloud backup)
+  - Continues to work even if Supabase sync fails
+  - Best of both worlds: speed + reliability
+
+#### 🔧 Technical Implementation
+
+**Modified `/src/app/services/initialization.ts`:**
+```typescript
+// Default credentials (can be overridden in Settings)
+const DEFAULT_SUPABASE_CONFIG = {
+  url: 'https://kxsavebrzaczjscyroth.supabase.co',
+  anonKey: 'eyJhbG...' // Your actual key
+};
+
+// Auto-connect on app load
+initializeSupabase(supabaseConfig);
+syncSupabaseToLocalStorage(); // Pull latest data
+```
+
+**Modified `/src/app/services/storage.ts`:**
+```typescript
+async createProperty(property: Property): Promise<Property> {
+  // 1. Save to localStorage first (fast + offline)
+  const localProperty = this.createPropertyLocal(property);
+  
+  // 2. Sync to Supabase if connected (cloud backup)
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    await this.createPropertyRemote(property);
+    console.log('✅ Property synced to Supabase');
+  }
+  
+  return localProperty;
+}
+// Same pattern for update, delete, features, customers, bookings
+```
+
+#### ✨ What This Fixes
+
+**Before:**
+- ❌ Properties saved to localStorage only
+- ❌ No automatic Supabase sync
+- ❌ Data not backed up to cloud
+- ❌ Manual sync required via "Push to Supabase" button
+
+**After:**
+- ✅ Properties save to localStorage AND Supabase automatically
+- ✅ Every create/update/delete syncs instantly
+- ✅ Cloud backup happens automatically
+- ✅ Manual sync button still available as backup
+
+#### 🎯 How It Works Now
+
+**On App Load:**
+1. App checks localStorage for saved Supabase credentials
+2. If not found, uses default credentials (your database)
+3. Connects to Supabase automatically
+4. Pulls latest data from cloud to localStorage
+5. Ready to use!
+
+**When Adding a Property:**
+1. Property saved to localStorage (instant)
+2. Property synced to Supabase (automatic)
+3. Console logs: "✅ Property synced to Supabase"
+4. Done! Property is in both local storage and cloud
+
+**Using Your Own Database:**
+1. Go to Settings > Database
+2. Enter your Supabase URL and Anon Key
+3. Click "Test Connection"
+4. Click "Push to Supabase" to upload your data
+5. Your credentials are saved and used on next load
+
+#### 📊 Console Logging
+
+Watch the browser console for real-time sync status:
+```
+🔄 Using saved Supabase credentials...
+🔄 Connecting to Supabase...
+✅ Supabase connected successfully
+🔄 Pulling latest data from Supabase...
+✅ Data synced from Supabase to localStorage
+✅ Property synced to Supabase
+✅ Feature synced to Supabase
+✅ Customer synced to Supabase
+✅ Booking synced to Supabase
+```
+
+#### 🔐 Default Database Credentials
+
+**Supabase URL:** `https://kxsavebrzaczjscyroth.supabase.co`  
+**Anon Key:** `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4c2F2ZWJyemFjempzY3lyb3RoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNTgyODksImV4cCI6MjA4NzkzNDI4OX0.DacfUFOOnZX0l5lv3keyPcjRGT7phS28l-4AZlIjFVM`
+
+These credentials are:
+- ✅ Pre-configured in the app
+- ✅ Saved to localStorage on first load
+- ✅ Used automatically on every app load
+- ✅ Can be overridden by users in Settings
+
+#### 🎉 User Benefits
+
+- 💾 **No setup required** - Works immediately
+- 🔄 **Automatic sync** - No manual buttons to click
+- 🌐 **Cloud backup** - All data backed up in real-time
+- 📱 **Cross-device** - Pull latest data on any device
+- 🔌 **Offline support** - localStorage ensures offline access
+- 🔧 **Customizable** - Use your own database if needed
+- 🐛 **Easy debugging** - Console logs show sync status
+
+#### 🚀 Migration Notes
+
+**For Existing Users:**
+1. App will auto-connect on next page load
+2. Existing localStorage data is preserved
+3. Data will be synced to Supabase automatically
+4. No manual action required
+
+**For New Users:**
+1. App connects to default database immediately
+2. Pulls any existing data from cloud
+3. Start using the app right away
+4. All operations auto-sync to cloud
+
+---
+
+### v1.81 - March 1, 2026
 **Feature: Functional Backup & Restore System**
 
 #### New Features
@@ -1032,6 +1177,13 @@ localStorage.setItem('maintenanceMode', JSON.stringify({
   - Helpful tooltips and instructions
   - Updated warning message with tips
 
+#### Bug Fixes
+- ✅ **Fixed Input Component Ref Warning**
+  - Updated Input component to use `React.forwardRef()`
+  - Properly forwards refs to underlying input element
+  - Eliminates console warnings about ref access
+  - Enables ref usage in SettingsPage for file input control
+
 #### Technical Implementation
 - Modified `/src/app/pages/admin/SettingsPage.tsx`:
   - Implemented `handleBackup()` function:
@@ -1046,6 +1198,12 @@ localStorage.setItem('maintenanceMode', JSON.stringify({
     - Reloads page to apply changes
   - Added `restoreFileInputRef` for file input control
   - Updated button labels and icons
+  
+- Modified `/src/app/components/ui/input.tsx`:
+  - Wrapped component with `React.forwardRef()`
+  - Added ref parameter and forwarding
+  - Added displayName for debugging
+  - Maintains all existing functionality
 
 #### Backup File Structure
 ```json
@@ -1961,5 +2119,5 @@ This software is proprietary and confidential. Unauthorized copying, modificatio
 
 ---
 
-**Last Updated:** March 1, 2026 | **Version:** v1.81  
+**Last Updated:** March 1, 2026 | **Version:** v1.82  
 **Maintained by:** Skyway Suites Development Team
