@@ -184,6 +184,16 @@ export class StorageService {
   }
 
   async createCustomer(customer: Customer): Promise<Customer> {
+    // Check for duplicate email before creating
+    const existingCustomers = await this.getCustomers();
+    const emailExists = existingCustomers.some(
+      (c: Customer) => c.email.toLowerCase() === customer.email.toLowerCase()
+    );
+    
+    if (emailExists) {
+      throw new Error('A customer with this email already exists');
+    }
+    
     // Always save to local first
     const localCustomer = this.createCustomerLocal(customer);
     

@@ -94,7 +94,13 @@ export const CustomersPage = () => {
       resetForm();
       loadCustomers();
     } catch (error) {
-      toast.error('Failed to save customer');
+      // Check if it's a duplicate email error
+      if (error instanceof Error && error.message.includes('email already exists')) {
+        toast.error('This email is already registered in the system');
+      } else {
+        toast.error('Failed to save customer');
+      }
+      console.error('Error saving customer:', error);
     }
   };
 

@@ -413,19 +413,29 @@ export const getPropertyById = async (id: string): Promise<Property | undefined>
 };
 
 export const createProperty = async (property: Omit<Property, 'id' | 'createdAt'>): Promise<Property> => {
-  const { storageService } = await import('./storage');
-  const newProperty = {
-    ...property,
-    id: Date.now().toString(),
-    createdAt: new Date().toISOString(),
-  } as Property;
-  
-  return await storageService.createProperty(newProperty);
+  try {
+    const { storageService } = await import('./storage');
+    const newProperty = {
+      ...property,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+    } as Property;
+    
+    return await storageService.createProperty(newProperty);
+  } catch (error) {
+    console.error('Error in createProperty:', error);
+    throw error;
+  }
 };
 
 export const updateProperty = async (id: string, property: Partial<Property>): Promise<Property> => {
-  const { storageService } = await import('./storage');
-  return await storageService.updateProperty(id, property);
+  try {
+    const { storageService } = await import('./storage');
+    return await storageService.updateProperty(id, property);
+  } catch (error) {
+    console.error('Error in updateProperty:', error);
+    throw error;
+  }
 };
 
 export const deleteProperty = async (id: string): Promise<void> => {
@@ -562,7 +572,7 @@ export const register = async (email: string, password: string, name: string, ph
   
   // Check for existing email in app_users (case-insensitive)
   if (appUsers.some((u: any) => u.email.toLowerCase() === email.toLowerCase())) {
-    throw new Error('User with this email already exists');
+    throw new Error('This email is already registered. Please use a different email or login.');
   }
   
   // Create new customer record using storage service

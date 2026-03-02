@@ -307,8 +307,10 @@ export const PropertiesPage = () => {
       resetForm();
       loadData();
     } catch (error) {
-      toast.error('Failed to save property');
-      console.error(error);
+      // Show detailed error message
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save property';
+      toast.error(errorMessage);
+      console.error('Error saving property:', error);
     }
   };
 
