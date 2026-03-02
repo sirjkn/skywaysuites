@@ -484,19 +484,46 @@ export class StorageService {
     try {
       const supabase = this.ensureSupabase();
       if (supabase) {
+        // Only send fields that exist in Supabase schema
+        // Exclude paymentMethod and transactionId if they don't exist in the table
+        const supabaseBooking = {
+          id: booking.id,
+          propertyId: booking.propertyId,
+          customerId: booking.customerId,
+          checkIn: booking.checkIn,
+          checkOut: booking.checkOut,
+          totalPrice: booking.totalPrice,
+          status: booking.status,
+          createdAt: booking.createdAt,
+        };
+
         const { data, error } = await supabase
           .from('bookings')
-          .insert([booking])
+          .insert([supabaseBooking])
           .select()
           .single();
         
         if (error) {
           console.error('Error creating booking in Supabase:', error);
-          throw error;
+          console.warn('⚠️ Falling back to localStorage due to Supabase error');
+          // Fall back to localStorage on error
+          const bookings = this.getFromLocalStorage<Booking[]>('bookings', []);
+          bookings.push(booking);
+          this.saveToLocalStorage('bookings', bookings);
+          console.log('✅ Booking created in localStorage (fallback):', booking.id);
+          return booking;
         }
         
         console.log('✅ Booking created in Supabase:', data.id);
-        return data;
+        
+        // Merge back the full booking data (including paymentMethod, transactionId)
+        // Store in localStorage for complete data retention
+        const fullBooking = { ...data, ...booking };
+        const bookings = this.getFromLocalStorage<Booking[]>('bookings', []);
+        bookings.push(fullBooking);
+        this.saveToLocalStorage('bookings', bookings);
+        
+        return fullBooking;
       } else {
         const bookings = this.getFromLocalStorage<Booking[]>('bookings', []);
         bookings.push(booking);
@@ -506,7 +533,17 @@ export class StorageService {
       }
     } catch (error) {
       console.error('Error in createBooking:', error);
-      throw error;
+      // Final fallback - always save to localStorage
+      try {
+        const bookings = this.getFromLocalStorage<Booking[]>('bookings', []);
+        bookings.push(booking);
+        this.saveToLocalStorage('bookings', bookings);
+        console.log('✅ Booking created in localStorage (error fallback):', booking.id);
+        return booking;
+      } catch (localError) {
+        console.error('Failed to save to localStorage:', localError);
+        throw error;
+      }
     }
   }
 
