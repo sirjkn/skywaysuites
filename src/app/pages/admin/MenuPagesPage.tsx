@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Eye, EyeOff, GripVertical } from 'lucide-react';
 import { Button } from '../../components/ui/button';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import { RichTextEditor } from '../../components/RichTextEditor';
 import {
   MenuPage,
   getMenuPages,
@@ -101,53 +100,6 @@ export const MenuPagesPage = () => {
     setShowForm(false);
   };
 
-  // Quill editor modules configuration
-  const modules = {
-    toolbar: [
-      [{ header: [1, 2, 3, 4, 5, 6, false] }],
-      [{ font: [] }],
-      [{ size: ['small', false, 'large', 'huge'] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ color: [] }, { background: [] }],
-      [{ script: 'sub' }, { script: 'super' }],
-      ['blockquote', 'code-block'],
-      [{ list: 'ordered' }, { list: 'bullet' }, { list: 'check' }],
-      [{ indent: '-1' }, { indent: '+1' }],
-      [{ align: [] }],
-      [{ direction: 'rtl' }],
-      ['link', 'image', 'video', 'formula'],
-      ['clean'],
-    ],
-    clipboard: {
-      matchVisual: false,
-    },
-  };
-
-  const formats = [
-    'header',
-    'font',
-    'size',
-    'bold',
-    'italic',
-    'underline',
-    'strike',
-    'color',
-    'background',
-    'script',
-    'blockquote',
-    'code-block',
-    'list',
-    'bullet',
-    'check',
-    'indent',
-    'align',
-    'direction',
-    'link',
-    'image',
-    'video',
-    'formula',
-  ];
-
   return (
     <div>
       {/* Header */}
@@ -233,33 +185,12 @@ export const MenuPagesPage = () => {
                 Page Content (Advanced Editor)
               </label>
               <div className="bg-white border border-gray-300 rounded-lg overflow-hidden">
-                <ReactQuill
-                  theme="snow"
+                <RichTextEditor
                   value={formData.content}
                   onChange={(value) => setFormData({ ...formData, content: value })}
-                  modules={modules}
-                  formats={formats}
                   placeholder="Write your page content here..."
                   className="h-64"
-                  style={{ height: '16rem' }}
                 />
-              </div>
-              <div className="mt-3 p-3 bg-[#F5E6D3]/30 rounded-lg">
-                <p className="text-xs text-[#36454F] font-medium mb-1">✨ Advanced Editor Features:</p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-[#36454F]/80">
-                  <div>• Headers (H1-H6)</div>
-                  <div>• Text Formatting</div>
-                  <div>• Colors & Highlights</div>
-                  <div>• Lists & Checkboxes</div>
-                  <div>• Code Blocks</div>
-                  <div>• Blockquotes</div>
-                  <div>• Links & Images</div>
-                  <div>• Videos & Formulas</div>
-                  <div>• Text Alignment</div>
-                  <div>• Subscript/Superscript</div>
-                  <div>• Indentation</div>
-                  <div>• RTL Support</div>
-                </div>
               </div>
             </div>
 
@@ -417,188 +348,6 @@ export const MenuPagesPage = () => {
           </table>
         </div>
       </div>
-
-      {/* Custom Styles for Quill Editor */}
-      <style>{`
-        .ql-editor {
-          min-height: 300px;
-          max-height: 500px;
-          overflow-y: auto;
-          font-size: 15px;
-          line-height: 1.6;
-        }
-        .ql-toolbar {
-          border-top-left-radius: 0.5rem;
-          border-top-right-radius: 0.5rem;
-          background: linear-gradient(180deg, #fafafa 0%, #f5f5f5 100%);
-          border: 1px solid #d1d5db !important;
-          border-bottom: none !important;
-          padding: 12px 8px;
-        }
-        .ql-container {
-          border-bottom-left-radius: 0.5rem;
-          border-bottom-right-radius: 0.5rem;
-          border: 1px solid #d1d5db !important;
-          font-family: 'Gothic A1', 'Century Gothic', sans-serif;
-        }
-        .ql-toolbar.ql-snow {
-          border: 1px solid #d1d5db !important;
-          border-bottom: none !important;
-        }
-        .ql-container.ql-snow {
-          border: 1px solid #d1d5db !important;
-        }
-        .ql-snow .ql-stroke {
-          stroke: #6B7F39;
-        }
-        .ql-snow .ql-fill {
-          fill: #6B7F39;
-        }
-        .ql-snow .ql-picker-label:hover,
-        .ql-snow .ql-picker-label.ql-active,
-        .ql-snow .ql-picker-item:hover,
-        .ql-snow .ql-picker-item.ql-selected {
-          color: #6B7F39;
-        }
-        .ql-toolbar button:hover,
-        .ql-toolbar button.ql-active {
-          color: #6B7F39 !important;
-        }
-        .ql-toolbar button:hover .ql-stroke,
-        .ql-toolbar button.ql-active .ql-stroke {
-          stroke: #6B7F39 !important;
-        }
-        .ql-toolbar button:hover .ql-fill,
-        .ql-toolbar button.ql-active .ql-fill {
-          fill: #6B7F39 !important;
-        }
-        .ql-snow.ql-toolbar button,
-        .ql-snow .ql-toolbar button {
-          width: 32px;
-          height: 32px;
-          padding: 4px;
-          margin: 2px;
-          border-radius: 4px;
-          transition: all 0.2s ease;
-        }
-        .ql-snow.ql-toolbar button:hover,
-        .ql-snow .ql-toolbar button:hover {
-          background: rgba(107, 127, 57, 0.1);
-        }
-        .ql-snow.ql-toolbar button.ql-active,
-        .ql-snow .ql-toolbar button.ql-active {
-          background: rgba(107, 127, 57, 0.15);
-        }
-        .ql-picker-label {
-          border-radius: 4px;
-          padding: 4px 8px;
-          transition: all 0.2s ease;
-        }
-        .ql-picker-label:hover {
-          background: rgba(107, 127, 57, 0.1);
-        }
-        .ql-editor.ql-blank::before {
-          color: #9ca3af;
-          font-style: normal;
-        }
-        .ql-editor h1 {
-          font-size: 2em;
-          font-weight: 600;
-          margin-bottom: 0.5em;
-          color: #2C3E50;
-        }
-        .ql-editor h2 {
-          font-size: 1.5em;
-          font-weight: 600;
-          margin-bottom: 0.5em;
-          color: #2C3E50;
-        }
-        .ql-editor h3 {
-          font-size: 1.25em;
-          font-weight: 600;
-          margin-bottom: 0.5em;
-          color: #2C3E50;
-        }
-        .ql-editor h4 {
-          font-size: 1.1em;
-          font-weight: 600;
-          margin-bottom: 0.5em;
-          color: #2C3E50;
-        }
-        .ql-editor blockquote {
-          border-left: 4px solid #6B7F39;
-          padding-left: 16px;
-          margin-left: 0;
-          margin-right: 0;
-          color: #4b5563;
-          font-style: italic;
-        }
-        .ql-editor code {
-          background: #f3f4f6;
-          padding: 2px 6px;
-          border-radius: 4px;
-          color: #6B7F39;
-          font-family: 'Courier New', monospace;
-        }
-        .ql-editor pre {
-          background: #2C3E50;
-          color: #F5E6D3;
-          padding: 16px;
-          border-radius: 8px;
-          overflow-x: auto;
-        }
-        .ql-editor a {
-          color: #6B7F39;
-          text-decoration: underline;
-        }
-        .ql-editor a:hover {
-          color: #556230;
-        }
-        .ql-editor img {
-          max-width: 100%;
-          height: auto;
-          border-radius: 8px;
-          margin: 8px 0;
-        }
-        .ql-editor ul,
-        .ql-editor ol {
-          padding-left: 1.5em;
-        }
-        .ql-editor li {
-          margin-bottom: 0.25em;
-        }
-        .ql-snow .ql-tooltip {
-          background: #2C3E50;
-          border: none;
-          color: white;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-          border-radius: 8px;
-          padding: 8px 12px;
-        }
-        .ql-snow .ql-tooltip input[type=text] {
-          border: 1px solid #6B7F39;
-          border-radius: 4px;
-          padding: 4px 8px;
-        }
-        .ql-snow .ql-tooltip a.ql-action::after {
-          content: 'Edit';
-          margin-left: 16px;
-          color: #6B7F39;
-        }
-        .ql-snow .ql-tooltip a.ql-remove::before {
-          content: 'Remove';
-          color: #E74C3C;
-        }
-        .ql-snow .ql-tooltip[data-mode=link]::before {
-          content: 'Enter link:';
-        }
-        .ql-snow .ql-tooltip[data-mode=formula]::before {
-          content: 'Enter formula:';
-        }
-        .ql-snow .ql-tooltip[data-mode=video]::before {
-          content: 'Enter video URL:';
-        }
-      `}</style>
     </div>
   );
 };

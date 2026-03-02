@@ -198,13 +198,13 @@ export const HomePage = () => {
                 something for everyone.
               </p>
               <div className="grid grid-cols-2 gap-6">
-                <div className="card-enhanced p-8 text-center bg-white border-2 border-[#6B7F39]/30 hover:border-[#6B7F39] transition-all duration-300 hover:shadow-olive">
-                  <h3 className="text-6xl font-extrabold text-[#6B7F39] mb-3 drop-shadow-sm">500+</h3>
-                  <p className="text-[#36454F] font-semibold text-lg">Happy Clients</p>
+                <div className="card-enhanced p-4 sm:p-6 md:p-8 text-center bg-white border-2 border-[#6B7F39]/30 hover:border-[#6B7F39] transition-all duration-300 hover:shadow-olive">
+                  <h3 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-[#6B7F39] mb-2 sm:mb-3 drop-shadow-sm">500+</h3>
+                  <p className="text-[#36454F] font-semibold text-sm sm:text-base md:text-lg">Happy Clients</p>
                 </div>
-                <div className="card-enhanced p-8 text-center bg-white border-2 border-[#6B7F39]/30 hover:border-[#6B7F39] transition-all duration-300 hover:shadow-olive">
-                  <h3 className="text-6xl font-extrabold text-[#6B7F39] mb-3 drop-shadow-sm">50+</h3>
-                  <p className="text-[#36454F] font-semibold text-lg">Properties</p>
+                <div className="card-enhanced p-4 sm:p-6 md:p-8 text-center bg-white border-2 border-[#6B7F39]/30 hover:border-[#6B7F39] transition-all duration-300 hover:shadow-olive">
+                  <h3 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-[#6B7F39] mb-2 sm:mb-3 drop-shadow-sm">50+</h3>
+                  <p className="text-[#36454F] font-semibold text-sm sm:text-base md:text-lg">Properties</p>
                 </div>
               </div>
             </div>
