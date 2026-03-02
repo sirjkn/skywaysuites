@@ -21,6 +21,8 @@ export interface AppUser {
  */
 export class StorageService {
   private storageType: StorageType = 'remote';
+  private propertiesCache: { data: Property[]; timestamp: number } | null = null;
+  private readonly CACHE_DURATION = 10000; // 10 seconds cache
 
   constructor() {
     console.log('🚀 StorageService initialized with Supabase as primary database');
@@ -56,24 +58,56 @@ export class StorageService {
     }
   }
 
+  // Helper to check if cache is valid
+  private isCacheValid(timestamp: number): boolean {
+    return Date.now() - timestamp < this.CACHE_DURATION;
+  }
+
   // Properties
   async getProperties(): Promise<Property[]> {
     try {
+      // Check cache first
+      if (this.propertiesCache && this.isCacheValid(this.propertiesCache.timestamp)) {
+        console.log('📦 Using cached properties');
+        return this.propertiesCache.data;
+      }
+
       const supabase = this.ensureSupabase();
       if (supabase) {
-        const { data, error } = await supabase
+        console.log('🔄 Fetching properties from Supabase...');
+        
+        // Add timeout using Promise.race
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Supabase request timeout (5s)')), 5000);
+        });
+
+        const fetchPromise = supabase
           .from('properties')
           .select('*')
           .order('createdAt', { ascending: false });
+
+        const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
         
         if (error) {
-          const errorMsg = `Failed to fetch properties from Supabase: ${error.message} (Code: ${error.code || 'UNKNOWN'}, Hint: ${error.hint || 'N/A'})`;
+          const errorMsg = `Failed to fetch properties from Supabase: ${error.message} (Code: ${error.code || 'UNKNOWN'})`;
           console.error('❌', errorMsg);
           console.warn('⚠️ Falling back to localStorage for properties');
           return this.getFromLocalStorage<Property[]>('properties', []);
         }
         
-        return data || [];
+        const properties = data || [];
+        
+        // Update cache
+        this.propertiesCache = {
+          data: properties,
+          timestamp: Date.now()
+        };
+        
+        // Also update localStorage as backup
+        this.saveToLocalStorage('properties', properties);
+        
+        console.log(`✅ Loaded ${properties.length} properties from Supabase`);
+        return properties;
       } else {
         console.log('📦 Loading properties from localStorage (Supabase not connected)');
         return this.getFromLocalStorage<Property[]>('properties', []);

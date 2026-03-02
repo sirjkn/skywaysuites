@@ -341,9 +341,10 @@ const calculatePropertyAvailability = (propertyId: string, bookings: Booking[]):
   const today = new Date();
   today.setHours(0, 0, 0, 0); // Reset time to midnight for accurate date comparison
   
-  // Get all confirmed bookings for this property
+  // Get all confirmed AND pending bookings for this property
+  // Pending bookings should also make the property unavailable
   const propertyBookings = bookings.filter(
-    booking => booking && booking.propertyId === propertyId && booking.status === 'confirmed'
+    booking => booking && booking.propertyId === propertyId && (booking.status === 'confirmed' || booking.status === 'pending')
   );
   
   // Find if there's an active booking (checkout date is in the future)
@@ -353,7 +354,7 @@ const calculatePropertyAvailability = (propertyId: string, bookings: Booking[]):
   });
   
   if (activeBooking) {
-    // Property is currently booked
+    // Property is currently booked (either confirmed or pending approval)
     const checkOutDate = new Date(activeBooking.checkOut);
     return {
       available: false,

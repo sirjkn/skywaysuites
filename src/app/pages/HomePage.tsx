@@ -19,13 +19,26 @@ export const HomePage = () => {
     phone: '+254 700 000 000',
     address: 'Nairobi, Kenya',
   });
-  const [categories, setCategories] = useState<string[]>(['All', 'Bedsitter', '1-Bedroom', '2-Bedroom', '3-Bedroom', '4-Bedroom']);
+  const [categories, setCategories] = useState<string[]>(['All']);
 
   useEffect(() => {
     const loadProperties = async () => {
       try {
         const data = await getProperties();
         setProperties(data);
+        
+        // Extract unique categories from actual properties
+        if (data.length > 0) {
+          const uniqueCategories = Array.from(new Set(data.map(p => p.category)));
+          setCategories(['All', ...uniqueCategories]);
+          console.log('✅ Categories loaded from existing properties:', uniqueCategories);
+        } else {
+          // If no properties, load from categories settings
+          const categoryData = await getCategories();
+          const categoryNames = categoryData.map((cat: Category) => cat.name);
+          setCategories(['All', ...categoryNames]);
+          console.log('✅ Categories loaded from settings (no properties yet):', categoryNames);
+        }
       } catch (error) {
         console.error('Error loading properties:', error);
       } finally {
@@ -34,23 +47,6 @@ export const HomePage = () => {
     };
 
     loadProperties();
-  }, []);
-
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const categoryData = await getCategories();
-        const categoryNames = categoryData.map((cat: Category) => cat.name);
-        setCategories(['All', ...categoryNames]);
-        console.log('✅ Categories loaded dynamically:', categoryNames);
-      } catch (error) {
-        console.error('Error loading categories:', error);
-        // Fallback to default categories if loading fails
-        setCategories(['All', 'Bedsitter', '1-Bedroom', '2-Bedroom', '3-Bedroom', '4-Bedroom']);
-      }
-    };
-
-    loadCategories();
   }, []);
 
   useEffect(() => {
