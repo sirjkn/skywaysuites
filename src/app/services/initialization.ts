@@ -100,7 +100,7 @@ export const initializeApp = async (): Promise<void> => {
       const syncResult = await Promise.race([
         syncSupabaseToLocalStorage(),
         new Promise<MigrationResult>((resolve) => 
-          setTimeout(() => resolve({ success: false, message: 'Sync timeout after 10 seconds' }), 10000)
+          setTimeout(() => resolve({ success: false, message: 'Sync timeout after 30 seconds' }), 30000)
         )
       ]);
       

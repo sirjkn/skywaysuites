@@ -3,6 +3,7 @@ import { X, Calendar, FileText, CreditCard, Smartphone } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
 import { getSettings, PaymentMethod, createBooking } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export const BookingModal = ({
   propertyId,
   onBookingCreated
 }: BookingModalProps) => {
+  const { user } = useAuth();
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [additionalInfo, setAdditionalInfo] = useState('');
@@ -54,8 +56,20 @@ export const BookingModal = ({
 
     if (isOpen) {
       loadPaymentMethods();
+      
+      // Auto-fill customer data from logged-in user
+      if (user) {
+        setCustomerName(user.name || '');
+        setCustomerEmail(user.email || '');
+        // Get phone from user metadata if available
+        const userData = localStorage.getItem('skyway_user');
+        if (userData) {
+          const parsedUser = JSON.parse(userData);
+          setCustomerPhone(parsedUser.phone || '');
+        }
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, user]);
 
   if (!isOpen) return null;
 
@@ -97,14 +111,7 @@ export const BookingModal = ({
       return;
     }
 
-    // Check if M-Pesa is selected and validate phone number
-    const selectedMethod = paymentMethods.find(pm => pm.id === paymentMethod);
-    if (selectedMethod?.id === 'mpesa') {
-      if (!transactionId) {
-        toast.error('Please enter your Mpesa transaction ID');
-        return;
-      }
-    }
+    // Transaction ID is now optional - no validation needed
 
     setIsSubmitting(true);
 
@@ -168,7 +175,7 @@ export const BookingModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
       <div 
-        className="card-enhanced max-w-lg w-full max-h-[90vh] overflow-y-auto animate-scale-in"
+        className="card-enhanced max-w-lg w-full max-h-[90vh] overflow-y-auto animate-scale-in bg-[#E5E4E2]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -263,7 +270,7 @@ export const BookingModal = ({
             <div className="animate-fade-in">
               <label htmlFor="transactionId" className="flex items-center gap-2 text-[#36454F] mb-2">
                 <Smartphone className="w-4 h-4 text-[#6B7F39]" />
-                Mpesa Transaction ID
+                Mpesa Transaction ID <span className="text-xs text-[#36454F]/60">(Optional)</span>
               </label>
               <input
                 type="text"
@@ -271,11 +278,10 @@ export const BookingModal = ({
                 value={transactionId}
                 onChange={(e) => setTransactionId(e.target.value)}
                 placeholder="Enter your M-Pesa transaction ID"
-                className="w-full px-4 py-3 rounded-lg border border-[#6B7F39]/20 bg-input-background focus:outline-none focus:ring-2 focus:ring-[#6B7F39]/30 transition-all"
-                required
+                className="w-full px-4 py-3 rounded-lg border border-[#6B7F39]/20 bg-white focus:outline-none focus:ring-2 focus:ring-[#6B7F39]/30 transition-all"
               />
               <p className="text-xs text-[#36454F]/60 mt-1">
-                Enter your M-Pesa transaction ID
+                Enter your M-Pesa transaction ID (optional)
               </p>
             </div>
           )}
@@ -293,8 +299,9 @@ export const BookingModal = ({
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
                 placeholder="Enter customer name"
-                className="w-full px-4 py-3 rounded-lg border border-[#6B7F39]/20 bg-input-background focus:outline-none focus:ring-2 focus:ring-[#6B7F39]/30 transition-all"
+                className="w-full px-4 py-3 rounded-lg border border-[#6B7F39]/20 bg-white focus:outline-none focus:ring-2 focus:ring-[#6B7F39]/30 transition-all"
                 required
+                disabled={!!user}
               />
             </div>
 
@@ -309,8 +316,9 @@ export const BookingModal = ({
                 value={customerEmail}
                 onChange={(e) => setCustomerEmail(e.target.value)}
                 placeholder="Enter customer email"
-                className="w-full px-4 py-3 rounded-lg border border-[#6B7F39]/20 bg-input-background focus:outline-none focus:ring-2 focus:ring-[#6B7F39]/30 transition-all"
+                className="w-full px-4 py-3 rounded-lg border border-[#6B7F39]/20 bg-white focus:outline-none focus:ring-2 focus:ring-[#6B7F39]/30 transition-all"
                 required
+                disabled={!!user}
               />
             </div>
 
@@ -325,8 +333,9 @@ export const BookingModal = ({
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value)}
                 placeholder="Enter customer phone"
-                className="w-full px-4 py-3 rounded-lg border border-[#6B7F39]/20 bg-input-background focus:outline-none focus:ring-2 focus:ring-[#6B7F39]/30 transition-all"
+                className="w-full px-4 py-3 rounded-lg border border-[#6B7F39]/20 bg-white focus:outline-none focus:ring-2 focus:ring-[#6B7F39]/30 transition-all"
                 required
+                disabled={!!user}
               />
             </div>
           </div>
