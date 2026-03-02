@@ -453,7 +453,7 @@ export const SettingsPage = () => {
       // Gather all data from localStorage
       const backupData = {
         timestamp: new Date().toISOString(),
-        version: "1.80",
+        version: "2.15",
         data: {
           properties: JSON.parse(localStorage.getItem('properties') || '[]'),
           features: JSON.parse(localStorage.getItem('features') || '[]'),

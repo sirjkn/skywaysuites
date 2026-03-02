@@ -1,9 +1,12 @@
 # Skyway Suites - Complete Documentation
 
-**Version:** v1.82  
-**Last Updated:** March 1, 2026  
+**Version:** 2.14  
+**Last Updated:** March 2, 2026  
 **Project Type:** Property Listing & Management Platform  
 **Tech Stack:** React + TypeScript + Supabase + Tailwind CSS v4
+
+**Versioning Scheme:** Major.Edit (e.g., 2.14 = Version 2, Edit 14)
+- After Edit 100, major version increments (e.g., 2.100 → 3.1)
 
 ---
 
@@ -803,7 +806,7 @@ bookings
 ├── check_in (DATE)
 ├── check_out (DATE)
 ├── total_price (NUMERIC)
-├── status (TEXT)
+���── status (TEXT)
 └── created_at (TIMESTAMP)
 ```
 
@@ -1007,7 +1010,37 @@ localStorage.setItem('maintenanceMode', JSON.stringify({
 
 ## Version History
 
-### v1.82 (Current) - March 1, 2026
+### v2.14 (Current) - March 2, 2026
+**Major Update: Supabase-First Architecture + Instant Global Sync**
+
+#### New Architecture
+- ✅ **Supabase as Primary Database** - All data stored in Supabase, not localStorage
+- ✅ **Instant Synchronization** - Every create/update/delete saves immediately to Supabase
+- ✅ **Global Data Access** - All data fetched from Supabase in real-time
+- ✅ **Bookings Sync** - User and admin bookings synced instantly worldwide
+- ✅ **Booking Status Updates** - Status changes (pending/confirmed/cancelled) sync immediately
+
+#### Bug Fixes
+- ✅ Fixed table naming (snake_case): `app_users`, `menu_pages`
+- ✅ Fixed AuthContext errors in BookingModal
+- ✅ Fixed MaintenanceWrapper to use localStorage directly
+- ✅ Booking modal auto-fills from logged-in user data
+- ✅ Transaction ID now optional in booking form
+
+#### UI Improvements
+- ✅ Booking modal background changed to platinum (#E5E4E2)
+- ✅ Customer fields auto-populated for logged-in users
+- ✅ Disabled editing of auto-filled customer information
+
+#### Technical Changes
+- ✅ Removed localStorage as data storage (only used for settings now)
+- ✅ All CRUD operations go directly to Supabase
+- ✅ Removed 5-second sync delays
+- ✅ Storage service completely rewritten for Supabase-first approach
+
+---
+
+### v1.82 - March 1, 2026
 **Major Update: Auto-Connect Supabase + Real-Time Sync**
 
 #### 🚀 New Features
@@ -2168,5 +2201,10 @@ This software is proprietary and confidential. Unauthorized copying, modificatio
 
 ---
 
-**Last Updated:** March 1, 2026 | **Version:** v1.82  
+**Last Updated:** March 2, 2026 | **Version:** 2.14  
 **Maintained by:** Skyway Suites Development Team
+
+**Versioning Scheme:**
+- Format: Major.Edit (e.g., 2.14 = Version 2, Edit 14)
+- Major version increments after every 100 edits
+- Example progression: 2.1 → 2.2 → ... → 2.99 → 2.100 → 3.1 → 3.2

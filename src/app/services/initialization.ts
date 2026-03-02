@@ -12,6 +12,14 @@ export interface AppUser {
   createdAt: string;
 }
 
+export interface InitializationProgress {
+  step: string;
+  status: 'pending' | 'loading' | 'complete' | 'error';
+  message?: string;
+}
+
+export type ProgressCallback = (progress: InitializationProgress) => void;
+
 const DEFAULT_ADMIN: AppUser = {
   id: 'admin-default',
   name: 'Administrator',
@@ -35,8 +43,15 @@ const DEFAULT_SUPABASE_CONFIG = {
  * Initialize the application with default data
  * This ensures the default admin user exists and Supabase is connected
  */
-export const initializeApp = async (): Promise<void> => {
+export const initializeApp = async (progressCallback?: ProgressCallback): Promise<void> => {
+  const updateProgress = (step: string, status: 'pending' | 'loading' | 'complete' | 'error', message?: string) => {
+    if (progressCallback) {
+      progressCallback({ step, status, message });
+    }
+  };
+
   try {
+    updateProgress('Initializing WhatsApp settings', 'loading');
     // Initialize default WhatsApp settings if not present
     const whatsappSettings = localStorage.getItem('contactDetailsSettings');
     if (!whatsappSettings) {
@@ -47,9 +62,12 @@ export const initializeApp = async (): Promise<void> => {
         message: 'Hello! I would like to inquire about your properties.',
       };
       localStorage.setItem('contactDetailsSettings', JSON.stringify(defaultWhatsAppSettings));
-      console.log('✅ Default WhatsApp settings initialized');
+      updateProgress('Initializing WhatsApp settings', 'complete', '✅ Default WhatsApp settings initialized');
+    } else {
+      updateProgress('Initializing WhatsApp settings', 'complete', '✅ WhatsApp settings already initialized');
     }
 
+    updateProgress('Initializing Supabase', 'loading');
     // Initialize Supabase - check for saved credentials first, otherwise use defaults
     const databaseSettings = localStorage.getItem('databaseSettings');
     let supabaseConfig = DEFAULT_SUPABASE_CONFIG;
@@ -63,17 +81,17 @@ export const initializeApp = async (): Promise<void> => {
             url: settings.supabaseUrl,
             anonKey: settings.supabaseAnonKey,
           };
-          console.log('🔄 Using saved Supabase credentials...');
+          updateProgress('Initializing Supabase', 'complete', '🔄 Using saved Supabase credentials...');
         } else {
           // Save default credentials if none exist
-          console.log('🔄 Using default Supabase credentials...');
+          updateProgress('Initializing Supabase', 'complete', '🔄 Using default Supabase credentials...');
           localStorage.setItem('databaseSettings', JSON.stringify({
             supabaseUrl: DEFAULT_SUPABASE_CONFIG.url,
             supabaseAnonKey: DEFAULT_SUPABASE_CONFIG.anonKey,
           }));
         }
       } catch (error) {
-        console.warn('⚠️ Error reading saved credentials, using defaults:', error);
+        updateProgress('Initializing Supabase', 'error', `⚠️ Error reading saved credentials, using defaults: ${error}`);
         // Save default credentials
         localStorage.setItem('databaseSettings', JSON.stringify({
           supabaseUrl: DEFAULT_SUPABASE_CONFIG.url,
@@ -82,7 +100,7 @@ export const initializeApp = async (): Promise<void> => {
       }
     } else {
       // No saved credentials, save and use defaults
-      console.log('🔄 No saved credentials found, using defaults...');
+      updateProgress('Initializing Supabase', 'complete', '🔄 No saved credentials found, using defaults...');
       localStorage.setItem('databaseSettings', JSON.stringify({
         supabaseUrl: DEFAULT_SUPABASE_CONFIG.url,
         supabaseAnonKey: DEFAULT_SUPABASE_CONFIG.anonKey,
@@ -90,12 +108,12 @@ export const initializeApp = async (): Promise<void> => {
     }
     
     // Connect to Supabase
-    console.log('🔄 Connecting to Supabase...');
+    updateProgress('Connecting to Supabase', 'loading');
     initializeSupabase(supabaseConfig);
-    console.log('✅ Supabase connected successfully');
+    updateProgress('Connecting to Supabase', 'complete', '✅ Supabase connected successfully');
     
     // Pull data from Supabase to localStorage (non-blocking)
-    console.log('🔄 Pulling latest data from Supabase...');
+    updateProgress('Pulling data from Supabase', 'loading');
     try {
       const syncResult = await Promise.race([
         syncSupabaseToLocalStorage(),
@@ -105,12 +123,12 @@ export const initializeApp = async (): Promise<void> => {
       ]);
       
       if (syncResult.success) {
-        console.log('✅ Data synced from Supabase to localStorage');
+        updateProgress('Pulling data from Supabase', 'complete', '✅ Data synced from Supabase to localStorage');
       } else {
-        console.warn('⚠️ Failed to sync from Supabase (app will continue with local data):', syncResult.message);
+        updateProgress('Pulling data from Supabase', 'error', `⚠️ Failed to sync from Supabase (app will continue with local data): ${syncResult.message}`);
       }
     } catch (syncError) {
-      console.warn('⚠️ Error during sync (app will continue with local data):', syncError);
+      updateProgress('Pulling data from Supabase', 'error', `⚠️ Error during sync (app will continue with local data): ${syncError}`);
     }
 
     // Get existing app users
@@ -120,12 +138,12 @@ export const initializeApp = async (): Promise<void> => {
     const adminExists = users.some((u: AppUser) => u.id === 'admin-default');
     
     if (!adminExists) {
-      console.log('Creating default admin user...');
+      updateProgress('Creating default admin user', 'loading');
       await storageService.createAppUser(DEFAULT_ADMIN);
-      console.log('Default admin user created successfully');
+      updateProgress('Creating default admin user', 'complete', 'Default admin user created successfully');
     }
   } catch (error) {
-    console.error('Error initializing app (app will continue):', error);
+    updateProgress('Initializing app', 'error', `Error initializing app (app will continue): ${error}`);
     // Try to create default admin even if there's an error
     try {
       const users = await storageService.getAppUsers();
@@ -134,7 +152,7 @@ export const initializeApp = async (): Promise<void> => {
         await storageService.createAppUser(DEFAULT_ADMIN);
       }
     } catch (createError) {
-      console.error('Failed to create default admin (app will continue):', createError);
+      updateProgress('Creating default admin user', 'error', `Failed to create default admin (app will continue): ${createError}`);
     }
   }
 };
