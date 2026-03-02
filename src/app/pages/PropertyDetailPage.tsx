@@ -13,7 +13,8 @@ import {
   Square, 
   ChevronLeft, 
   ChevronRight,
-  CheckCircle2 
+  CheckCircle2,
+  Loader2
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
@@ -31,20 +32,35 @@ export const PropertyDetailPage = () => {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [activePhotoCategory, setActivePhotoCategory] = useState<string>('Living Room');
   const [lightboxImages, setLightboxImages] = useState<Array<{id: string, url: string, category?: string}>>([]);
+  const [imagesLoaded, setImagesLoaded] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     const loadProperty = async () => {
       if (!id) return;
       
       try {
-        const [propertyData, featuresData] = await Promise.all([
-          getPropertyById(id),
-          getFeatures(),
+        // Start loading property data immediately
+        const propertyPromise = getPropertyById(id);
+        const featuresPromise = getFeatures();
+        
+        // Use Promise.allSettled to handle partial failures gracefully
+        const [propertyResult, featuresResult] = await Promise.allSettled([
+          propertyPromise,
+          featuresPromise,
         ]);
         
-        if (propertyData) {
-          setProperty(propertyData);
-          setPropertyFeatures(featuresData.filter(f => propertyData.features.includes(f.id)));
+        if (propertyResult.status === 'fulfilled' && propertyResult.value) {
+          setProperty(propertyResult.value);
+          
+          // Preload the first image only for faster initial render
+          if (propertyResult.value.images && propertyResult.value.images.length > 0) {
+            const firstImage = new Image();
+            firstImage.src = propertyResult.value.images[0].url;
+          }
+          
+          if (featuresResult.status === 'fulfilled') {
+            setPropertyFeatures(featuresResult.value.filter(f => propertyResult.value.features.includes(f.id)));
+          }
         } else {
           toast.error('Property not found');
           navigate('/');
@@ -305,11 +321,13 @@ export const PropertyDetailPage = () => {
                                 e.stopPropagation();
                                 openLightbox(originalIndex);
                               }}
-                              className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer border border-gray-200 hover:border-[#6B7F39] transition-colors"
+                              className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer border border-gray-200 hover:border-[#6B7F39] transition-colors bg-gray-100"
                             >
                               <img
                                 src={image.url}
                                 alt={image.category || `Photo ${originalIndex + 1}`}
+                                loading="lazy"
+                                decoding="async"
                                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                                 onError={(e) => {
                                   // Handle image load errors gracefully
@@ -509,31 +527,47 @@ export const PropertyDetailPage = () => {
             </button>
           )}
 
-          {/* Thumbnail Navigation */}
+          {/* Thumbnail Navigation - Optimized */}
           {property.images.length > 1 && (
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[110] max-w-full">
               <div className="bg-black/50 backdrop-blur-sm rounded-full px-4 py-3">
                 <div className="flex gap-2 overflow-x-auto scrollbar-hide max-w-[90vw] md:max-w-2xl">
-                  {property.images.map((image, index) => (
-                    <button
-                      key={index}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCurrentImageIndex(index);
-                      }}
-                      className={`flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden transition-all border-2 ${
-                        index === currentImageIndex
-                          ? 'border-[#6B7F39] scale-110 shadow-lg'
-                          : 'border-white/30 hover:border-white/60 opacity-70 hover:opacity-100'
-                      }`}
-                    >
-                      <img
-                        src={image.url}
-                        alt={`Thumbnail ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  ))}
+                  {property.images.map((image, index) => {
+                    // Only render thumbnails within visible range (current +/- 10 images)
+                    const shouldRender = Math.abs(index - currentImageIndex) <= 10;
+                    if (!shouldRender) {
+                      return (
+                        <div
+                          key={index}
+                          className="flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg bg-gray-700"
+                        />
+                      );
+                    }
+                    
+                    const isActive = index === currentImageIndex;
+                    const thumbnailClass = isActive
+                      ? 'border-[#6B7F39] scale-110 shadow-lg'
+                      : 'border-white/30 hover:border-white/60 opacity-70 hover:opacity-100';
+                    
+                    return (
+                      <button
+                        key={index}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentImageIndex(index);
+                        }}
+                        className={`flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden transition-all border-2 ${thumbnailClass}`}
+                      >
+                        <img
+                          src={image.url}
+                          alt={`Thumbnail ${index + 1}`}
+                          loading="lazy"
+                          decoding="async"
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>

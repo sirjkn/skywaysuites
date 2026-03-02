@@ -577,7 +577,7 @@ export const PropertiesPage = () => {
 
             {/* Image Upload */}
             <div>
-              <Label>Property Images (Max 5MB each)</Label>
+              <Label>Property Images (Auto-compressed to 50KB, 800x500px max)</Label>
               
               {/* Category Tabs */}
               <div className="mt-3 flex flex-wrap gap-2">

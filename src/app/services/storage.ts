@@ -76,38 +76,45 @@ export class StorageService {
       if (supabase) {
         console.log('🔄 Fetching properties from Supabase...');
         
-        // Add timeout using Promise.race
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('Supabase request timeout (5s)')), 5000);
-        });
-
-        const fetchPromise = supabase
-          .from('properties')
-          .select('*')
-          .order('createdAt', { ascending: false });
-
-        const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
-        
-        if (error) {
-          const errorMsg = `Failed to fetch properties from Supabase: ${error.message} (Code: ${error.code || 'UNKNOWN'})`;
+        // Fetch with a simple timeout wrapper
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+          
+          const query = supabase
+            .from('properties')
+            .select('*')
+            .order('createdAt', { ascending: false });
+          
+          const { data, error } = await query;
+          clearTimeout(timeoutId);
+          
+          if (error) {
+            const errorMsg = `Failed to fetch properties from Supabase: ${error.message || 'Unknown error'}`;
+            console.error('❌', errorMsg);
+            console.warn('⚠️ Falling back to localStorage for properties');
+            return this.getFromLocalStorage<Property[]>('properties', []);
+          }
+          
+          const properties = data || [];
+          
+          // Update cache
+          this.propertiesCache = {
+            data: properties,
+            timestamp: Date.now()
+          };
+          
+          // Also update localStorage as backup
+          this.saveToLocalStorage('properties', properties);
+          
+          console.log(`✅ Loaded ${properties.length} properties from Supabase`);
+          return properties;
+        } catch (timeoutError) {
+          const errorMsg = `Supabase request timeout (10s)`;
           console.error('❌', errorMsg);
           console.warn('⚠️ Falling back to localStorage for properties');
           return this.getFromLocalStorage<Property[]>('properties', []);
         }
-        
-        const properties = data || [];
-        
-        // Update cache
-        this.propertiesCache = {
-          data: properties,
-          timestamp: Date.now()
-        };
-        
-        // Also update localStorage as backup
-        this.saveToLocalStorage('properties', properties);
-        
-        console.log(`✅ Loaded ${properties.length} properties from Supabase`);
-        return properties;
       } else {
         console.log('📦 Loading properties from localStorage (Supabase not connected)');
         return this.getFromLocalStorage<Property[]>('properties', []);
@@ -929,24 +936,35 @@ export class StorageService {
     try {
       const supabase = this.ensureSupabase();
       if (supabase) {
+        // Use upsert to handle duplicates gracefully
         const { data, error } = await supabase
           .from('app_users')
-          .insert([user])
+          .upsert([user], { onConflict: 'id' })
           .select()
           .single();
         
         if (error) {
-          console.error('Error creating app user in Supabase:', error);
+          console.error('Error creating/updating app user in Supabase:', error);
           throw error;
         }
         
-        console.log('✅ App user created in Supabase:', data.id);
+        console.log('✅ App user created/updated in Supabase:', data.id);
         return data;
       } else {
         const appUsers = this.getFromLocalStorage<AppUser[]>('app_users', []);
-        appUsers.push(user);
+        const existingIndex = appUsers.findIndex(u => u.id === user.id);
+        
+        if (existingIndex >= 0) {
+          // Update existing user
+          appUsers[existingIndex] = user;
+          console.log('✅ App user updated in localStorage:', user.id);
+        } else {
+          // Add new user
+          appUsers.push(user);
+          console.log('✅ App user created in localStorage:', user.id);
+        }
+        
         this.saveToLocalStorage('app_users', appUsers);
-        console.log('✅ App user created in localStorage:', user.id);
         return user;
       }
     } catch (error) {

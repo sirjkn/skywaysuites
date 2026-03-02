@@ -38,16 +38,17 @@ export const SliderSettings = ({ sliderSettings, setSliderSettings }: SliderSett
     setUploadingSlideImage(slideId);
     try {
       const webPImage = await convertToWebP(file, {
-        maxWidth: 1920,
-        maxHeight: 1080,
+        maxWidth: 800,
+        maxHeight: 500,
         quality: 0.85,
+        maxSizeKB: 50,
       });
       setSliderSettings((prevSlides) =>
         prevSlides.map((slide) =>
           slide.id === slideId ? { ...slide, image: webPImage } : slide,
         ),
       );
-      toast.success("Image uploaded and converted to WebP successfully!");
+      toast.success("Image compressed to 50KB and converted to WebP!");
     } catch (error) {
       console.error("Error converting image to WebP:", error);
       toast.error("Failed to upload image. Please try again.");
@@ -243,7 +244,7 @@ export const SliderSettings = ({ sliderSettings, setSliderSettings }: SliderSett
                     </Label>
                   </div>
                   <p className="text-xs text-[#36454F]/60 mt-2">
-                    💡 Recommended: 1920x1080px (auto-converted to WebP)
+                    💡 Auto-compressed to 50KB, 800x500px max (WebP format)
                   </p>
                 </div>
               </div>

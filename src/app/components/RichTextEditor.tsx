@@ -1,7 +1,14 @@
-import { useEffect, useState } from 'react';
-
-// Dynamically import ReactQuill to avoid SSR issues and CSS import problems
-let ReactQuill: any = null;
+import { useState } from 'react';
+import { Button } from './ui/button';
+import { 
+  Bold, 
+  Italic, 
+  Underline, 
+  List, 
+  ListOrdered, 
+  Link as LinkIcon,
+  Image as ImageIcon
+} from 'lucide-react';
 
 interface RichTextEditorProps {
   value: string;
@@ -11,69 +18,133 @@ interface RichTextEditorProps {
 }
 
 export const RichTextEditor = ({ value, onChange, placeholder, className }: RichTextEditorProps) => {
-  const [isClient, setIsClient] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
-  useEffect(() => {
-    setIsClient(true);
+  const handleFormat = (format: string) => {
+    const textarea = document.querySelector('textarea[data-rich-editor="true"]') as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = value.substring(start, end);
     
-    // Dynamically import ReactQuill and its CSS
-    if (!ReactQuill) {
-      import('react-quill').then((mod) => {
-        ReactQuill = mod.default;
-        
-        // Dynamically import the CSS
-        import('react-quill/dist/quill.snow.css').catch((err) => {
-          console.warn('Failed to load Quill CSS:', err);
-        });
-      }).catch((err) => {
-        console.error('Failed to load ReactQuill:', err);
-      });
+    let newText = '';
+    let formatTag = '';
+
+    switch (format) {
+      case 'bold':
+        formatTag = '**';
+        newText = value.substring(0, start) + `${formatTag}${selectedText}${formatTag}` + value.substring(end);
+        break;
+      case 'italic':
+        formatTag = '_';
+        newText = value.substring(0, start) + `${formatTag}${selectedText}${formatTag}` + value.substring(end);
+        break;
+      case 'underline':
+        formatTag = '__';
+        newText = value.substring(0, start) + `${formatTag}${selectedText}${formatTag}` + value.substring(end);
+        break;
+      case 'bullet':
+        newText = value.substring(0, start) + `\n• ${selectedText}` + value.substring(end);
+        break;
+      case 'ordered':
+        newText = value.substring(0, start) + `\n1. ${selectedText}` + value.substring(end);
+        break;
+      case 'link':
+        newText = value.substring(0, start) + `[${selectedText}](url)` + value.substring(end);
+        break;
+      default:
+        return;
     }
-  }, []);
 
-  // Don't render on server or while loading
-  if (!isClient || !ReactQuill) {
-    return (
-      <div className={`border rounded-lg p-4 ${className || ''}`}>
-        <p className="text-gray-400">Loading editor...</p>
-      </div>
-    );
-  }
-
-  const modules = {
-    toolbar: [
-      [{ header: [1, 2, 3, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ list: 'ordered' }, { list: 'bullet' }],
-      [{ align: [] }],
-      ['link', 'image'],
-      ['clean'],
-    ],
+    onChange(newText);
+    
+    // Restore focus and cursor position
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + formatTag.length, end + formatTag.length);
+    }, 0);
   };
 
-  const formats = [
-    'header',
-    'bold',
-    'italic',
-    'underline',
-    'strike',
-    'list',
-    'bullet',
-    'align',
-    'link',
-    'image',
-  ];
-
   return (
-    <div className={className}>
-      <ReactQuill
-        theme="snow"
+    <div className={`border rounded-lg overflow-hidden ${className || ''}`}>
+      {/* Toolbar */}
+      <div className="flex items-center gap-1 p-2 border-b bg-gray-50">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => handleFormat('bold')}
+          className="h-8 w-8 p-0"
+          title="Bold"
+        >
+          <Bold className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => handleFormat('italic')}
+          className="h-8 w-8 p-0"
+          title="Italic"
+        >
+          <Italic className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => handleFormat('underline')}
+          className="h-8 w-8 p-0"
+          title="Underline"
+        >
+          <Underline className="h-4 w-4" />
+        </Button>
+        <div className="w-px h-6 bg-gray-300 mx-1" />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => handleFormat('bullet')}
+          className="h-8 w-8 p-0"
+          title="Bullet List"
+        >
+          <List className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => handleFormat('ordered')}
+          className="h-8 w-8 p-0"
+          title="Numbered List"
+        >
+          <ListOrdered className="h-4 w-4" />
+        </Button>
+        <div className="w-px h-6 bg-gray-300 mx-1" />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => handleFormat('link')}
+          className="h-8 w-8 p-0"
+          title="Insert Link"
+        >
+          <LinkIcon className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Text Area */}
+      <textarea
+        data-rich-editor="true"
         value={value}
-        onChange={onChange}
-        modules={modules}
-        formats={formats}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
         placeholder={placeholder}
-        className="bg-white rounded-lg"
+        className={`w-full min-h-[200px] p-4 resize-y focus:outline-none ${
+          isFocused ? 'ring-2 ring-blue-500 ring-inset' : ''
+        }`}
       />
     </div>
   );

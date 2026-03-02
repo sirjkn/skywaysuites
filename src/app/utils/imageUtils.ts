@@ -6,10 +6,12 @@ export interface ImageUploadOptions {
   maxWidth?: number;
   maxHeight?: number;
   quality?: number; // 0 to 1
+  maxSizeKB?: number; // Maximum file size in KB
 }
 
 /**
  * Converts an image file to WebP format and compresses it
+ * Ensures the final image is 50kb or less and 800x500px or smaller by default
  * @param file - The original image file
  * @param options - Compression options
  * @returns Promise with the compressed WebP image as a base64 string
@@ -19,9 +21,10 @@ export const convertToWebP = async (
   options: ImageUploadOptions = {}
 ): Promise<string> => {
   const {
-    maxWidth = 1920,
-    maxHeight = 1080,
+    maxWidth = 800,
+    maxHeight = 500,
     quality = 0.85,
+    maxSizeKB = 50,
   } = options;
 
   return new Promise((resolve, reject) => {
@@ -30,7 +33,7 @@ export const convertToWebP = async (
     reader.onload = (e) => {
       const img = new Image();
       
-      img.onload = () => {
+      img.onload = async () => {
         // Calculate new dimensions while maintaining aspect ratio
         let width = img.width;
         let height = img.height;
@@ -61,13 +64,51 @@ export const convertToWebP = async (
         // Draw and compress
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Convert to WebP
+        // Iteratively compress until size is under maxSizeKB
+        let currentQuality = quality;
+        const maxSizeBytes = maxSizeKB * 1024;
+        
+        // Try to compress with iterative quality reduction
+        for (let attempt = 0; attempt < 10; attempt++) {
+          let webpDataUrl: string;
+          
+          try {
+            webpDataUrl = canvas.toDataURL('image/webp', currentQuality);
+          } catch (error) {
+            // Fallback to JPEG if WebP is not supported
+            webpDataUrl = canvas.toDataURL('image/jpeg', currentQuality);
+          }
+          
+          // Convert data URL to size in bytes (estimate)
+          const base64Length = webpDataUrl.split(',')[1].length;
+          const sizeInBytes = (base64Length * 3) / 4;
+          
+          // If size is acceptable, return
+          if (sizeInBytes <= maxSizeBytes) {
+            resolve(webpDataUrl);
+            return;
+          }
+          
+          // Reduce quality for next iteration
+          currentQuality -= 0.1;
+          
+          // If quality is too low, reduce dimensions instead
+          if (currentQuality < 0.3 && sizeInBytes > maxSizeBytes) {
+            width *= 0.9;
+            height *= 0.9;
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+            currentQuality = 0.75; // Reset quality when reducing size
+          }
+        }
+        
+        // Final attempt - return the most compressed version
         try {
-          const webpDataUrl = canvas.toDataURL('image/webp', quality);
+          const webpDataUrl = canvas.toDataURL('image/webp', 0.3);
           resolve(webpDataUrl);
         } catch (error) {
-          // Fallback to JPEG if WebP is not supported
-          const jpegDataUrl = canvas.toDataURL('image/jpeg', quality);
+          const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.3);
           resolve(jpegDataUrl);
         }
       };

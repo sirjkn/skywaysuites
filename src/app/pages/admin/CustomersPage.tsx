@@ -115,10 +115,15 @@ export const CustomersPage = () => {
 
     setUploadingPhoto(true);
     try {
-      const webPImage = await convertToWebP(file, { maxWidth: 800, maxHeight: 800, quality: 0.85 });
+      const webPImage = await convertToWebP(file, { 
+        maxWidth: 800, 
+        maxHeight: 500, 
+        quality: 0.85,
+        maxSizeKB: 50
+      });
       setFormData({ ...formData, photo: webPImage });
       setPhotoPreview(webPImage);
-      toast.success('Photo uploaded and converted to WebP successfully!');
+      toast.success('Photo compressed to 50KB and converted to WebP!');
     } catch (error) {
       console.error('Error converting image to WebP:', error);
       toast.error('Failed to upload photo. Please try again.');
