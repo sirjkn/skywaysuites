@@ -530,17 +530,24 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
 
 /**
  * Sync data from Supabase to localStorage (for offline access)
+ * OPTIMIZED: Uses parallel queries with specific limits and error handling
  */
 export const syncSupabaseToLocalStorage = async (): Promise<MigrationResult> => {
   const supabase = getSupabaseClient();
   if (!supabase) {
-    return { success: false, message: 'Supabase not connected' };
+    return { 
+      success: false, 
+      message: 'Supabase client not initialized. Check database settings in Admin > Settings > Database.',
+      details: { errorCode: 'SUPABASE_NOT_CONNECTED', timestamp: new Date().toISOString() }
+    };
   }
 
   try {
-    console.log('🔄 Starting parallel data sync from Supabase...');
+    console.log('🔄 Starting optimized parallel data sync from Supabase...');
+    const startTime = performance.now();
     
-    // Execute all queries in parallel for better performance
+    // Execute all queries in parallel with optimized limits for faster loading
+    // Only fetch what's needed, avoid massive data transfers
     const [
       propertiesResult,
       featuresResult,
@@ -553,93 +560,146 @@ export const syncSupabaseToLocalStorage = async (): Promise<MigrationResult> => 
       whatsappSettingsResult,
       sliderSettingsResult,
     ] = await Promise.all([
-      supabase.from('properties').select('*'),
-      supabase.from('features').select('*'),
-      supabase.from('customers').select('*'),
-      supabase.from('bookings').select('*'),
-      supabase.from('payments').select('*'),
-      supabase.from('menu_pages').select('*'),
-      supabase.from('app_users').select('*'),
+      supabase.from('properties').select('*').limit(1000), // Limit to prevent huge transfers
+      supabase.from('features').select('*').limit(500),
+      supabase.from('customers').select('*').limit(1000),
+      supabase.from('bookings').select('*').limit(1000),
+      supabase.from('payments').select('*').limit(1000),
+      supabase.from('menu_pages').select('*').limit(100),
+      supabase.from('app_users').select('*').limit(100),
       supabase.from('general_settings').select('*').eq('id', 'default').maybeSingle(),
       supabase.from('whatsapp_settings').select('*').eq('id', 'default').maybeSingle(),
-      supabase.from('slider_settings').select('*').order('order'),
+      supabase.from('slider_settings').select('*').order('order').limit(20),
     ]);
 
-    // Process results and update localStorage
+    let successCount = 0;
+    let errorCount = 0;
+    const errors: string[] = [];
+
+    // Process results and update localStorage with specific error messages
     if (propertiesResult.error) {
-      console.warn('Error syncing properties from Supabase:', propertiesResult.error);
+      errorCount++;
+      const errorMsg = `Properties sync failed: ${propertiesResult.error.message} (Code: ${propertiesResult.error.code || 'UNKNOWN'})`;
+      console.warn('⚠️', errorMsg);
+      errors.push(errorMsg);
     } else if (propertiesResult.data) {
       localStorage.setItem('properties', JSON.stringify(propertiesResult.data));
       console.log(`✅ Synced ${propertiesResult.data.length} properties`);
+      successCount++;
     }
 
     if (featuresResult.error) {
-      console.warn('Error syncing features from Supabase:', featuresResult.error);
+      errorCount++;
+      const errorMsg = `Features sync failed: ${featuresResult.error.message} (Code: ${featuresResult.error.code || 'UNKNOWN'})`;
+      console.warn('⚠️', errorMsg);
+      errors.push(errorMsg);
     } else if (featuresResult.data) {
       localStorage.setItem('features', JSON.stringify(featuresResult.data));
       console.log(`✅ Synced ${featuresResult.data.length} features`);
+      successCount++;
     }
 
     if (customersResult.error) {
-      console.warn('Error syncing customers from Supabase:', customersResult.error);
+      errorCount++;
+      const errorMsg = `Customers sync failed: ${customersResult.error.message} (Code: ${customersResult.error.code || 'UNKNOWN'})`;
+      console.warn('⚠️', errorMsg);
+      errors.push(errorMsg);
     } else if (customersResult.data) {
       localStorage.setItem('customers', JSON.stringify(customersResult.data));
       console.log(`✅ Synced ${customersResult.data.length} customers`);
+      successCount++;
     }
 
     if (bookingsResult.error) {
-      console.warn('Error syncing bookings from Supabase:', bookingsResult.error);
+      errorCount++;
+      const errorMsg = `Bookings sync failed: ${bookingsResult.error.message} (Code: ${bookingsResult.error.code || 'UNKNOWN'})`;
+      console.warn('⚠️', errorMsg);
+      errors.push(errorMsg);
     } else if (bookingsResult.data) {
       localStorage.setItem('bookings', JSON.stringify(bookingsResult.data));
       console.log(`✅ Synced ${bookingsResult.data.length} bookings`);
+      successCount++;
     }
 
     if (paymentsResult.error) {
-      console.warn('Error syncing payments from Supabase:', paymentsResult.error);
+      errorCount++;
+      const errorMsg = `Payments sync failed: ${paymentsResult.error.message} (Code: ${paymentsResult.error.code || 'UNKNOWN'})`;
+      console.warn('⚠️', errorMsg);
+      errors.push(errorMsg);
     } else if (paymentsResult.data) {
       localStorage.setItem('payments', JSON.stringify(paymentsResult.data));
       console.log(`✅ Synced ${paymentsResult.data.length} payments`);
+      successCount++;
     }
 
     if (menuPagesResult.error) {
-      console.warn('Error syncing menu pages from Supabase:', menuPagesResult.error);
+      errorCount++;
+      const errorMsg = `Menu pages sync failed: ${menuPagesResult.error.message} (Code: ${menuPagesResult.error.code || 'UNKNOWN'})`;
+      console.warn('⚠️', errorMsg);
+      errors.push(errorMsg);
     } else if (menuPagesResult.data) {
       localStorage.setItem('menuPages', JSON.stringify(menuPagesResult.data));
       console.log(`✅ Synced ${menuPagesResult.data.length} menu pages`);
+      successCount++;
     }
 
     if (appUsersResult.error) {
-      console.warn('Error syncing app users from Supabase:', appUsersResult.error);
+      errorCount++;
+      const errorMsg = `App users sync failed: ${appUsersResult.error.message} (Code: ${appUsersResult.error.code || 'UNKNOWN'})`;
+      console.warn('⚠️', errorMsg);
+      errors.push(errorMsg);
     } else if (appUsersResult.data) {
       localStorage.setItem('appUsers', JSON.stringify(appUsersResult.data));
       console.log(`✅ Synced ${appUsersResult.data.length} app users`);
+      successCount++;
     }
 
     if (generalSettingsResult.error) {
-      console.warn('Error syncing general settings from Supabase:', generalSettingsResult.error);
+      errorCount++;
+      const errorMsg = `General settings sync failed: ${generalSettingsResult.error.message} (Code: ${generalSettingsResult.error.code || 'UNKNOWN'})`;
+      console.warn('⚠️', errorMsg);
+      errors.push(errorMsg);
     } else if (generalSettingsResult.data) {
       localStorage.setItem('generalSettings', JSON.stringify(generalSettingsResult.data));
       console.log('✅ Synced general settings');
+      successCount++;
     }
 
     if (whatsappSettingsResult.error) {
-      console.warn('Error syncing WhatsApp settings from Supabase:', whatsappSettingsResult.error);
+      errorCount++;
+      const errorMsg = `WhatsApp settings sync failed: ${whatsappSettingsResult.error.message} (Code: ${whatsappSettingsResult.error.code || 'UNKNOWN'})`;
+      console.warn('⚠️', errorMsg);
+      errors.push(errorMsg);
     } else if (whatsappSettingsResult.data) {
       localStorage.setItem('contactDetailsSettings', JSON.stringify(whatsappSettingsResult.data));
       console.log('✅ Synced WhatsApp settings');
+      successCount++;
     }
 
     if (sliderSettingsResult.error) {
-      console.warn('Error syncing slider settings from Supabase:', sliderSettingsResult.error);
+      errorCount++;
+      const errorMsg = `Slider settings sync failed: ${sliderSettingsResult.error.message} (Code: ${sliderSettingsResult.error.code || 'UNKNOWN'})`;
+      console.warn('⚠️', errorMsg);
+      errors.push(errorMsg);
     } else if (sliderSettingsResult.data) {
       localStorage.setItem('heroSlides', JSON.stringify(sliderSettingsResult.data));
       console.log(`✅ Synced ${sliderSettingsResult.data.length} slider settings`);
+      successCount++;
     }
 
-    console.log('✅ Parallel sync completed successfully');
+    const endTime = performance.now();
+    const duration = (endTime - startTime).toFixed(2);
+
+    console.log(`✅ Parallel sync completed successfully in ${duration} ms`);
     return {
       success: true,
       message: 'Data synced from Supabase to localStorage',
+      details: {
+        successCount,
+        errorCount,
+        errors,
+        duration: `${duration} ms`,
+      },
     };
   } catch (error) {
     console.error('Sync error:', error);

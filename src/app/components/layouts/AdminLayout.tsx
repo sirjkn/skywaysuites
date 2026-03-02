@@ -96,18 +96,18 @@ export const AdminLayout = () => {
 
       {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md border-b border-gray-200 z-50 shadow-sm">
-        <div className="flex items-center justify-between p-4">
+        <div className="flex items-center justify-between px-3 py-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-olive rounded-lg flex items-center justify-center shadow-olive">
-              <span className="text-white text-sm font-bold">S</span>
+            <div className="w-7 h-7 bg-gradient-olive rounded-lg flex items-center justify-center shadow-olive">
+              <span className="text-white text-xs font-bold">S</span>
             </div>
-            <span className="font-semibold text-lg text-[#2C3E50]">Skyway</span>
+            <span className="font-semibold text-base text-[#2C3E50]">Skyway Admin</span>
           </div>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 rounded-lg hover:bg-[#F5E6D3] text-[#2C3E50] transition-colors"
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>
@@ -173,9 +173,9 @@ export const AdminLayout = () => {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 md:ml-[240px]">
-        {/* Top Bar */}
-        <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 px-6 py-4 flex items-center justify-end gap-4 shadow-sm sticky top-0 z-30">
+      <main className="flex-1 md:ml-[240px] w-full">
+        {/* Top Bar - Desktop only */}
+        <div className="hidden md:flex bg-white/95 backdrop-blur-md border-b border-gray-200 px-4 lg:px-6 py-4 items-center justify-end gap-4 shadow-sm sticky top-0 z-30">
           <Link
             to="/"
             className="text-sm text-[#2C3E50] hover:text-[#6B7F39] transition-colors font-medium"
@@ -184,7 +184,7 @@ export const AdminLayout = () => {
           </Link>
           <div className="border-l border-gray-300 pl-4 flex items-center gap-3">
             <div className="text-right">
-              <p className="text-sm text-[#6B7F39] font-medium">{user?.email || 'admin@skyway.com'}</p>
+              <p className="text-sm text-[#6B7F39] font-medium truncate max-w-[150px]">{user?.email || 'admin@skyway.com'}</p>
               <p className="text-xs text-[#7F8C8D]">Administrator</p>
             </div>
             <button
@@ -198,7 +198,7 @@ export const AdminLayout = () => {
         </div>
 
         {/* Page Content */}
-        <div className="p-6 page-transition">
+        <div className="p-3 sm:p-4 md:p-6 page-transition mt-[56px] md:mt-0 w-full overflow-x-hidden">
           <Outlet />
         </div>
       </main>

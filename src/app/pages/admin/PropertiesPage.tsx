@@ -328,30 +328,33 @@ export const PropertiesPage = () => {
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#2C3E50]">Properties</h1>
-          <p className="text-[#7F8C8D] text-sm mt-1">Manage your property listings</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#2C3E50]">Properties</h1>
+          <p className="text-sm text-[#7F8C8D] mt-1">Manage your property listings</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <Button 
-            onClick={() => setCategoriesModalOpen(true)}
-            variant="outline"
-            className="border-[#36454F] text-[#36454F] hover:bg-[#36454F] hover:text-white"
+            onClick={() => setCategoriesModalOpen(true)} 
+            variant="outline" 
+            className="text-xs sm:text-sm flex-1 sm:flex-none"
           >
             <Tag className="w-4 h-4 mr-2" />
             Categories
           </Button>
           <Button 
-            onClick={() => setLocationsModalOpen(true)}
-            variant="outline"
-            className="border-[#36454F] text-[#36454F] hover:bg-[#36454F] hover:text-white"
+            onClick={() => setLocationsModalOpen(true)} 
+            variant="outline" 
+            className="text-xs sm:text-sm flex-1 sm:flex-none"
           >
             <MapPin className="w-4 h-4 mr-2" />
             Locations
           </Button>
-          <Button onClick={handleAdd} className="bg-[#36454F] hover:bg-[#2C3E50] text-white">
+          <Button 
+            onClick={handleAdd} 
+            className="bg-[#36454F] hover:bg-[#2C3E50] text-white text-xs sm:text-sm w-full sm:w-auto"
+          >
             <Plus className="w-4 h-4 mr-2" />
             Add Property
           </Button>
@@ -360,38 +363,38 @@ export const PropertiesPage = () => {
 
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[640px]">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#7F8C8D] uppercase tracking-wider">Property</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#7F8C8D] uppercase tracking-wider">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#7F8C8D] uppercase tracking-wider">Location</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#7F8C8D] uppercase tracking-wider">Price/Day</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#7F8C8D] uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-[#7F8C8D] uppercase tracking-wider">Actions</th>
+                <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-[#7F8C8D] uppercase tracking-wider">Property</th>
+                <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-[#7F8C8D] uppercase tracking-wider">Category</th>
+                <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-[#7F8C8D] uppercase tracking-wider">Location</th>
+                <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-[#7F8C8D] uppercase tracking-wider">Price/Day</th>
+                <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-[#7F8C8D] uppercase tracking-wider">Status</th>
+                <th className="px-3 sm:px-4 md:px-6 py-3 text-right text-xs font-medium text-[#7F8C8D] uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {properties.map((property) => (
                 <tr key={property.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
+                  <td className="px-3 sm:px-4 md:px-6 py-4">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       <img
                         src={property.images.find(img => img.isDefault)?.url}
                         alt={property.name}
-                        className="w-16 h-16 rounded-lg object-cover"
+                        className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover flex-shrink-0"
                       />
-                      <div>
-                        <p className="font-medium text-[#2C3E50]">{property.name}</p>
-                        <p className="text-sm text-[#7F8C8D]">{property.bedrooms} bed, {property.bathrooms} bath</p>
+                      <div className="min-w-0">
+                        <p className="font-medium text-[#2C3E50] text-sm sm:text-base truncate">{property.name}</p>
+                        <p className="text-xs sm:text-sm text-[#7F8C8D]">{property.bedrooms} bed, {property.bathrooms} bath</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-[#2C3E50]">{property.category}</td>
-                  <td className="px-6 py-4 text-sm text-[#2C3E50]">{property.location}</td>
-                  <td className="px-6 py-4 text-sm font-semibold text-[#6B7F39]">Ksh {property.price}</td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  <td className="px-3 sm:px-4 md:px-6 py-4 text-xs sm:text-sm text-[#2C3E50]">{property.category}</td>
+                  <td className="px-3 sm:px-4 md:px-6 py-4 text-xs sm:text-sm text-[#2C3E50]">{property.location}</td>
+                  <td className="px-3 sm:px-4 md:px-6 py-4 text-xs sm:text-sm font-semibold text-[#6B7F39]">Ksh {property.price}</td>
+                  <td className="px-3 sm:px-4 md:px-6 py-4">
+                    <span className={`inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       property.available 
                         ? 'bg-green-100 text-green-800' 
                         : 'bg-red-100 text-red-800'
@@ -399,21 +402,21 @@ export const PropertiesPage = () => {
                       {property.available ? 'Available' : 'Unavailable'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
+                  <td className="px-3 sm:px-4 md:px-6 py-4 text-right">
+                    <div className="flex justify-end gap-1 sm:gap-2">
                       <button
                         onClick={() => handleEdit(property)}
-                        className="p-2 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-1.5 sm:p-2 hover:bg-blue-50 rounded-lg transition-colors"
                         title="Edit"
                       >
-                        <Edit className="w-4 h-4 text-[#3498DB]" />
+                        <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#3498DB]" />
                       </button>
                       <button
                         onClick={() => handleDelete(property.id)}
-                        className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-1.5 sm:p-2 hover:bg-red-50 rounded-lg transition-colors"
                         title="Delete"
                       >
-                        <Trash2 className="w-4 h-4 text-[#E74C3C]" />
+                        <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#E74C3C]" />
                       </button>
                     </div>
                   </td>

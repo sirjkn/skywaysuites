@@ -67,17 +67,22 @@ export class StorageService {
           .order('createdAt', { ascending: false });
         
         if (error) {
-          console.error('Error fetching properties from Supabase:', error);
-          throw error;
+          const errorMsg = `Failed to fetch properties from Supabase: ${error.message} (Code: ${error.code || 'UNKNOWN'}, Hint: ${error.hint || 'N/A'})`;
+          console.error('❌', errorMsg);
+          console.warn('⚠️ Falling back to localStorage for properties');
+          return this.getFromLocalStorage<Property[]>('properties', []);
         }
         
         return data || [];
       } else {
+        console.log('📦 Loading properties from localStorage (Supabase not connected)');
         return this.getFromLocalStorage<Property[]>('properties', []);
       }
     } catch (error) {
-      console.error('Error in getProperties:', error);
-      throw error;
+      const errorMsg = `Critical error in getProperties: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      console.error('❌', errorMsg);
+      // Always try to return local data as last resort
+      return this.getFromLocalStorage<Property[]>('properties', []);
     }
   }
 

@@ -118,7 +118,11 @@ export const initializeApp = async (progressCallback?: ProgressCallback): Promis
       const syncResult = await Promise.race([
         syncSupabaseToLocalStorage(),
         new Promise<MigrationResult>((resolve) => 
-          setTimeout(() => resolve({ success: false, message: 'Sync timeout after 30 seconds' }), 30000)
+          setTimeout(() => resolve({ 
+            success: false, 
+            message: 'Sync timeout: Data pull exceeded 10 seconds. App will continue with local data.',
+            details: { errorCode: 'SYNC_TIMEOUT', timeout: 10000 }
+          }), 10000) // Reduced from 30s to 10s for faster loading
         )
       ]);
       
