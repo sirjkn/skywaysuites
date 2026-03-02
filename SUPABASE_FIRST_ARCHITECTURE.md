@@ -28,7 +28,7 @@ User Action → Save INSTANTLY to Supabase → Data available globally
 - ✅ **Removed localStorage as primary storage**
 - ✅ **All data operations go directly to Supabase**
 - ✅ **Instant save on every create/update/delete**
-- ✅ **All reads come from Supabase only**
+- ��� **All reads come from Supabase only**
 - ✅ **No more delays or sync intervals**
 
 ### **2. All CRUD Operations Now Instant**
@@ -130,7 +130,7 @@ await updateBooking('booking-id', { status: 'confirmed' });
 │  │  Features  │  │ Payments │  │  Menu Pages  │   │
 │  │   Table    │  │  Table   │  │    Table     │   │
 │  └────────────┘  └──────────┘  └──────────────┘   │
-└──────────────────────┬──────────────────────────────┘
+└───────────────��──────┬──────────────────────────────┘
                        │
                        │ Data synced across
                        ↓
@@ -273,15 +273,15 @@ supabase.from('bookings').update({ status: 'confirmed' }).eq('id', bookingId)
 
 ## 🎯 Required Supabase Tables
 
-Your Supabase database must have these tables:
+Your Supabase database must have these tables (using snake_case naming):
 
 1. **`properties`** - Property listings
 2. **`bookings`** - Booking records (with status field)
 3. **`customers`** - Customer information
 4. **`features`** - Property features
 5. **`payments`** - Payment records
-6. **`menuPages`** - Menu/navigation pages
-7. **`appUsers`** - Application users
+6. **`menu_pages`** - Menu/navigation pages
+7. **`app_users`** - Application users
 
 ### **Example: Bookings Table Schema**
 
@@ -301,6 +301,15 @@ CREATE TABLE bookings (
   FOREIGN KEY (customerId) REFERENCES customers(id)
 );
 ```
+
+### **Important: Table Naming Convention**
+⚠️ **All table names use snake_case**, not camelCase:
+- ✅ `app_users` (correct)
+- ❌ `appUsers` (incorrect)
+- ✅ `menu_pages` (correct)
+- ❌ `menuPages` (incorrect)
+
+This follows PostgreSQL/Supabase standard naming conventions.
 
 ---
 

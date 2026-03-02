@@ -494,7 +494,7 @@ export class StorageService {
     try {
       const supabase = this.ensureSupabase();
       const { data, error } = await supabase
-        .from('menuPages')
+        .from('menu_pages')
         .select('*')
         .order('order', { ascending: true });
       
@@ -514,7 +514,7 @@ export class StorageService {
     try {
       const supabase = this.ensureSupabase();
       const { data, error } = await supabase
-        .from('menuPages')
+        .from('menu_pages')
         .insert([menuPage])
         .select()
         .single();
@@ -536,7 +536,7 @@ export class StorageService {
     try {
       const supabase = this.ensureSupabase();
       const { data, error } = await supabase
-        .from('menuPages')
+        .from('menu_pages')
         .update(menuPage)
         .eq('id', id)
         .select()
@@ -559,7 +559,7 @@ export class StorageService {
     try {
       const supabase = this.ensureSupabase();
       const { error } = await supabase
-        .from('menuPages')
+        .from('menu_pages')
         .delete()
         .eq('id', id);
       
@@ -580,7 +580,7 @@ export class StorageService {
     try {
       const supabase = this.ensureSupabase();
       const { data, error } = await supabase
-        .from('appUsers')
+        .from('app_users')
         .select('*')
         .order('createdAt', { ascending: false });
       
@@ -600,7 +600,7 @@ export class StorageService {
     try {
       const supabase = this.ensureSupabase();
       const { data, error } = await supabase
-        .from('appUsers')
+        .from('app_users')
         .insert([user])
         .select()
         .single();
@@ -622,7 +622,7 @@ export class StorageService {
     try {
       const supabase = this.ensureSupabase();
       const { data, error } = await supabase
-        .from('appUsers')
+        .from('app_users')
         .update(user)
         .eq('id', id)
         .select()
@@ -645,7 +645,7 @@ export class StorageService {
     try {
       const supabase = this.ensureSupabase();
       const { error } = await supabase
-        .from('appUsers')
+        .from('app_users')
         .delete()
         .eq('id', id);
       
