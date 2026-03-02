@@ -6,6 +6,7 @@ import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
 import { toast } from "sonner";
 import { convertToWebP, isValidImageFile } from "../../utils/imageUtils";
+import { getSupabaseClient } from "../../services/supabase";
 
 interface Slide {
   id: number;
@@ -64,38 +65,96 @@ export const SliderSettings = ({ sliderSettings, setSliderSettings }: SliderSett
     toast.success("Slide image removed");
   };
 
-  const handleDeleteSlide = (slideId: number) => {
+  const handleDeleteSlide = async (slideId: number) => {
     if (sliderSettings.length <= 1) {
       toast.error("Cannot delete the last slide. At least one slide is required.");
       return;
     }
 
     if (confirm("Are you sure you want to delete this slide? This action cannot be undone.")) {
-      setSliderSettings((prevSlides) => prevSlides.filter((slide) => slide.id !== slideId));
+      const updatedSlides = sliderSettings.filter((slide) => slide.id !== slideId);
+      setSliderSettings(updatedSlides);
+      
+      // Save to localStorage
+      localStorage.setItem("heroSlides", JSON.stringify(updatedSlides));
+      
+      // Save to Supabase in real-time
+      const supabase = getSupabaseClient();
+      if (supabase) {
+        try {
+          // Delete from Supabase
+          await supabase.from('slider_settings').delete().eq('id', slideId.toString());
+          console.log('✅ Slide deleted from Supabase in real-time');
+        } catch (error) {
+          console.error('❌ Failed to delete slide from Supabase:', error);
+        }
+      }
+      
       toast.success("Slide deleted successfully");
-      // Auto-save after deletion
-      setTimeout(() => {
-        const updatedSlides = sliderSettings.filter((slide) => slide.id !== slideId);
-        localStorage.setItem("heroSlides", JSON.stringify(updatedSlides));
-        window.dispatchEvent(new Event("sliderSettingsChanged"));
-      }, 100);
+      window.dispatchEvent(new Event("sliderSettingsChanged"));
     }
   };
 
-  const handleAddSlide = () => {
+  const handleAddSlide = async () => {
     const newSlide: Slide = {
       id: Date.now(),
       image: "",
       title: "",
       subtitle: "",
     };
-    setSliderSettings((prevSlides) => [...prevSlides, newSlide]);
+    const updatedSlides = [...sliderSettings, newSlide];
+    setSliderSettings(updatedSlides);
+    
+    // Save to localStorage
+    localStorage.setItem("heroSlides", JSON.stringify(updatedSlides));
+    
+    // Save to Supabase in real-time
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        await supabase.from('slider_settings').upsert({
+          id: newSlide.id.toString(),
+          image: newSlide.image,
+          title: newSlide.title,
+          subtitle: newSlide.subtitle,
+          order: updatedSlides.length - 1,
+        }, { onConflict: 'id' });
+        console.log('✅ New slide saved to Supabase in real-time');
+      } catch (error) {
+        console.error('❌ Failed to save slide to Supabase:', error);
+      }
+    }
+    
     toast.success("New slide added");
+    window.dispatchEvent(new Event("sliderSettingsChanged"));
   };
 
-  const handleSaveSliderSettings = () => {
-    toast.success("Slider settings saved successfully");
+  const handleSaveSliderSettings = async () => {
+    // Save to localStorage
     localStorage.setItem("heroSlides", JSON.stringify(sliderSettings));
+    
+    // Save to Supabase in real-time
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        const slides = sliderSettings.map((slide, index) => ({
+          id: slide.id.toString(),
+          image: slide.image,
+          title: slide.title,
+          subtitle: slide.subtitle,
+          order: index,
+        }));
+        await supabase.from('slider_settings').upsert(slides, { onConflict: 'id' });
+        console.log('✅ All slides saved to Supabase in real-time');
+        toast.success("Slider settings saved successfully (synced to Supabase)");
+      } catch (error) {
+        console.error('❌ Failed to save slides to Supabase:', error);
+        toast.success("Slider settings saved locally (Supabase sync failed)");
+      }
+    } else {
+      toast.success("Slider settings saved locally");
+    }
+    
     window.dispatchEvent(new Event("sliderSettingsChanged"));
   };
 

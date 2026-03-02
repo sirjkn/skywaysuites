@@ -232,6 +232,15 @@ CREATE TABLE IF NOT EXISTS app_users (
   "createdAt" TIMESTAMP DEFAULT NOW()
 );
 
+-- Categories Table
+CREATE TABLE IF NOT EXISTS categories (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  bedrooms INTEGER NOT NULL DEFAULT 0,
+  description TEXT,
+  "createdAt" TIMESTAMP DEFAULT NOW()
+);
+
 -- Enable Row Level Security (RLS) - Optional but recommended
 ALTER TABLE properties ENABLE ROW LEVEL SECURITY;
 ALTER TABLE features ENABLE ROW LEVEL SECURITY;
@@ -246,6 +255,7 @@ ALTER TABLE payment_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE whatsapp_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE slider_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app_users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 
 -- Create policies to allow public access (adjust based on your needs)
 CREATE POLICY "Allow public read access" ON properties FOR SELECT USING (true);
@@ -289,6 +299,11 @@ CREATE POLICY "Allow public read access" ON app_users FOR SELECT USING (true);
 CREATE POLICY "Allow public insert" ON app_users FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public update" ON app_users FOR UPDATE USING (true);
 CREATE POLICY "Allow public delete" ON app_users FOR DELETE USING (true);
+
+CREATE POLICY "Allow public read access" ON categories FOR SELECT USING (true);
+CREATE POLICY "Allow public insert" ON categories FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update" ON categories FOR UPDATE USING (true);
+CREATE POLICY "Allow public delete" ON categories FOR DELETE USING (true);
   `.trim();
 };
 
@@ -583,9 +598,58 @@ export const syncSupabaseToLocalStorage = async (): Promise<MigrationResult> => 
       console.warn('⚠️', errorMsg);
       errors.push(errorMsg);
     } else if (propertiesResult.data) {
-      localStorage.setItem('properties', JSON.stringify(propertiesResult.data));
-      console.log(`✅ Synced ${propertiesResult.data.length} properties`);
-      successCount++;
+      try {
+        // Optimize data to prevent localStorage quota errors
+        // Remove large base64 images, keep only URLs
+        const optimizedProperties = propertiesResult.data.map((prop: any) => ({
+          ...prop,
+          images: prop.images?.map((img: any) => ({
+            id: img.id,
+            url: img.url,
+            isDefault: img.isDefault,
+            category: img.category,
+            // Remove base64 data if it exists
+          })) || []
+        }));
+        
+        const propertiesJson = JSON.stringify(optimizedProperties);
+        
+        // Check size before storing (warn if > 2MB)
+        const sizeInMB = new Blob([propertiesJson]).size / (1024 * 1024);
+        if (sizeInMB > 2) {
+          console.warn(`⚠️ Properties data is large (${sizeInMB.toFixed(2)} MB). Consider pagination.`);
+        }
+        
+        localStorage.setItem('properties', propertiesJson);
+        console.log(`✅ Synced ${propertiesResult.data.length} properties (${sizeInMB.toFixed(2)} MB)`);
+        successCount++;
+      } catch (quotaError: any) {
+        errorCount++;
+        const errorMsg = `Properties storage failed: ${quotaError.message || 'Quota exceeded'}. Data too large for localStorage.`;
+        console.error('❌', errorMsg);
+        errors.push(errorMsg);
+        
+        // Try to store limited data as fallback
+        try {
+          const limitedProperties = propertiesResult.data.slice(0, 50).map((prop: any) => ({
+            id: prop.id,
+            name: prop.name,
+            price: prop.price,
+            location: prop.location,
+            category: prop.category,
+            available: prop.available,
+            images: prop.images?.slice(0, 1).map((img: any) => ({
+              id: img.id,
+              url: img.url,
+              isDefault: img.isDefault,
+            })) || []
+          }));
+          localStorage.setItem('properties', JSON.stringify(limitedProperties));
+          console.log(`⚠️ Stored limited properties data (50 items, minimal fields)`);
+        } catch (fallbackError) {
+          console.error('❌ Even fallback storage failed. localStorage may be full.');
+        }
+      }
     }
 
     if (featuresResult.error) {

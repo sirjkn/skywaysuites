@@ -45,6 +45,7 @@ import { getEmailSettings, saveEmailSettings, initializeEmailJS } from '../../se
 import { SliderSettings } from '../../components/settings/SliderSettings';
 import { EmailSettings } from '../../components/settings/EmailSettings';
 import { UsersSettings } from '../../components/settings/UsersSettings';
+import { getStorageInfo, formatBytes, getStorageWarningLevel, cleanupOldData } from '../../services/storageManager';
 
 interface Slide {
   id: number;
@@ -453,7 +454,7 @@ export const SettingsPage = () => {
       // Gather all data from localStorage
       const backupData = {
         timestamp: new Date().toISOString(),
-        version: "2.17",
+        version: "2.18",
         data: {
           properties: JSON.parse(localStorage.getItem('properties') || '[]'),
           features: JSON.parse(localStorage.getItem('features') || '[]'),
@@ -543,20 +544,52 @@ export const SettingsPage = () => {
         return;
       }
 
-      // Restore all data to localStorage
+      // Restore all data to localStorage with quota error handling
       const { data } = backupData;
       
-      if (data.properties) localStorage.setItem('properties', JSON.stringify(data.properties));
-      if (data.features) localStorage.setItem('features', JSON.stringify(data.features));
-      if (data.customers) localStorage.setItem('customers', JSON.stringify(data.customers));
-      if (data.bookings) localStorage.setItem('bookings', JSON.stringify(data.bookings));
-      if (data.payments) localStorage.setItem('payments', JSON.stringify(data.payments));
-      if (data.menuPages) localStorage.setItem('menuPages', JSON.stringify(data.menuPages));
-      if (data.appUsers) localStorage.setItem('appUsers', JSON.stringify(data.appUsers));
-      if (data.generalSettings) localStorage.setItem('generalSettings', JSON.stringify(data.generalSettings));
-      if (data.contactDetailsSettings) localStorage.setItem('contactDetailsSettings', JSON.stringify(data.contactDetailsSettings));
-      if (data.heroSlides) localStorage.setItem('heroSlides', JSON.stringify(data.heroSlides));
-      if (data.databaseSettings) localStorage.setItem('databaseSettings', JSON.stringify(data.databaseSettings));
+      try {
+        if (data.properties) {
+          const propertiesJson = JSON.stringify(data.properties);
+          const sizeInMB = new Blob([propertiesJson]).size / (1024 * 1024);
+          
+          if (sizeInMB > 3) {
+            // Data is too large, optimize it
+            console.warn(`⚠️ Properties data is large (${sizeInMB.toFixed(2)} MB). Optimizing...`);
+            const optimized = data.properties.map((prop: any) => ({
+              ...prop,
+              images: prop.images?.map((img: any) => ({
+                id: img.id,
+                url: img.url,
+                isDefault: img.isDefault,
+                category: img.category,
+              })) || []
+            }));
+            localStorage.setItem('properties', JSON.stringify(optimized));
+          } else {
+            localStorage.setItem('properties', propertiesJson);
+          }
+        }
+        
+        if (data.features) localStorage.setItem('features', JSON.stringify(data.features));
+        if (data.customers) localStorage.setItem('customers', JSON.stringify(data.customers));
+        if (data.bookings) localStorage.setItem('bookings', JSON.stringify(data.bookings));
+        if (data.payments) localStorage.setItem('payments', JSON.stringify(data.payments));
+        if (data.menuPages) localStorage.setItem('menuPages', JSON.stringify(data.menuPages));
+        if (data.appUsers) localStorage.setItem('appUsers', JSON.stringify(data.appUsers));
+        if (data.generalSettings) localStorage.setItem('generalSettings', JSON.stringify(data.generalSettings));
+        if (data.contactDetailsSettings) localStorage.setItem('contactDetailsSettings', JSON.stringify(data.contactDetailsSettings));
+        if (data.heroSlides) localStorage.setItem('heroSlides', JSON.stringify(data.heroSlides));
+        if (data.databaseSettings) localStorage.setItem('databaseSettings', JSON.stringify(data.databaseSettings));
+      } catch (quotaError: any) {
+        toast.error(
+          `❌ Storage quota exceeded: ${quotaError.message}. Try clearing browser data or restore fewer items.`,
+          { duration: 8000 }
+        );
+        if (restoreFileInputRef.current) {
+          restoreFileInputRef.current.value = '';
+        }
+        return;
+      }
 
       // Calculate total items restored
       const totalItems = 
@@ -1831,15 +1864,117 @@ export const SettingsPage = () => {
 
       {/* Local Storage Info */}
       {databaseSettings.storageType === 'local' && (
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
-            <div className="text-sm text-amber-800">
-              <p className="font-semibold mb-1">Using Local Storage</p>
-              <p>Data is stored in your browser and will be lost if you clear browser data. For production use, switch to Remote Database.</p>
+        <>
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
+              <div className="text-sm text-amber-800">
+                <p className="font-semibold mb-1">Using Local Storage</p>
+                <p>Data is stored in your browser and will be lost if you clear browser data. For production use, switch to Remote Database.</p>
+              </div>
             </div>
           </div>
-        </div>
+
+          {/* Storage Usage Monitor */}
+          <div className="border border-[#6B7F39]/30 rounded-lg p-6 bg-gradient-to-br from-[#FAF4EC] to-white">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-[#36454F] flex items-center gap-2">
+                <HardDrive className="w-5 h-5 text-[#6B7F39]" />
+                Storage Usage Monitor
+              </h3>
+              <Button
+                onClick={() => {
+                  const cleanup = cleanupOldData();
+                  if (cleanup.success && cleanup.freedSpace > 0) {
+                    toast.success(`✅ ${cleanup.message}`);
+                    setTimeout(() => window.location.reload(), 1000);
+                  } else if (cleanup.freedSpace === 0) {
+                    toast.info('No unnecessary data found to clean up');
+                  } else {
+                    toast.error(cleanup.message);
+                  }
+                }}
+                variant="outline"
+                size="sm"
+                className="text-xs"
+              >
+                <RefreshCw className="w-3 h-3 mr-1" />
+                Clean Up
+              </Button>
+            </div>
+
+            {(() => {
+              const storageInfo = getStorageInfo();
+              const warningLevel = getStorageWarningLevel();
+              
+              const levelColors = {
+                safe: 'bg-green-500',
+                warning: 'bg-yellow-500',
+                critical: 'bg-orange-500',
+                full: 'bg-red-500'
+              };
+              
+              const levelTextColors = {
+                safe: 'text-green-700',
+                warning: 'text-yellow-700',
+                critical: 'text-orange-700',
+                full: 'text-red-700'
+              };
+
+              return (
+                <>
+                  {/* Progress Bar */}
+                  <div className="mb-4">
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-[#36454F]/70">
+                        {formatBytes(storageInfo.used)} / {formatBytes(storageInfo.total)}
+                      </span>
+                      <span className={`font-semibold ${levelTextColors[warningLevel]}`}>
+                        {storageInfo.percentage.toFixed(1)}% used
+                      </span>
+                    </div>
+                    <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${levelColors[warningLevel]} transition-all duration-500`}
+                        style={{ width: `${Math.min(storageInfo.percentage, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Warning Messages */}
+                  {warningLevel === 'critical' && (
+                    <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg mb-4">
+                      <p className="text-sm text-orange-800">
+                        <strong>⚠️ Storage Almost Full:</strong> Consider cleaning up or switching to Remote Database
+                      </p>
+                    </div>
+                  )}
+                  
+                  {warningLevel === 'full' && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-4">
+                      <p className="text-sm text-red-800">
+                        <strong>❌ Storage Critical:</strong> Clear browser data or switch to Remote Database immediately
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Top Storage Consumers */}
+                  <div>
+                    <p className="text-sm font-medium text-[#36454F]/70 mb-2">Top Storage Consumers:</p>
+                    <div className="space-y-1">
+                      {storageInfo.items.slice(0, 5).map((item, index) => (
+                        <div key={item.key} className="flex justify-between items-center text-sm">
+                          <span className="text-[#36454F]/70 truncate flex-1">{index + 1}. {item.key}</span>
+                          <span className="font-mono text-[#6B7F39] ml-2">{item.sizeFormatted}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </>
       )}
 
       <Button

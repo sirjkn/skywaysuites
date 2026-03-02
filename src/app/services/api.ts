@@ -653,34 +653,122 @@ export const deleteMenuPage = async (id: string): Promise<void> => {
 
 // Categories API
 export const getCategories = async (): Promise<Category[]> => {
-  // TODO: Replace with actual API call
-  return Promise.resolve(mockCategories);
+  try {
+    // Try to get from localStorage first (for speed)
+    const stored = localStorage.getItem('categories');
+    if (stored) {
+      return JSON.parse(stored);
+    }
+    
+    // Return default categories if nothing stored
+    const defaultCategories: Category[] = [
+      { id: '1', name: 'Bedsitter', bedrooms: 0, description: 'Studio apartment' },
+      { id: '2', name: '1-Bedroom', bedrooms: 1, description: 'One bedroom apartment' },
+      { id: '3', name: '2-Bedroom', bedrooms: 2, description: 'Two bedroom apartment' },
+      { id: '4', name: '3-Bedroom', bedrooms: 3, description: 'Three bedroom apartment' },
+      { id: '5', name: '4-Bedroom', bedrooms: 4, description: 'Four bedroom apartment' },
+    ];
+    
+    // Save defaults to localStorage
+    localStorage.setItem('categories', JSON.stringify(defaultCategories));
+    return defaultCategories;
+  } catch (error) {
+    console.error('Error loading categories:', error);
+    return [];
+  }
 };
 
 export const createCategory = async (category: Omit<Category, 'id'>): Promise<Category> => {
-  // TODO: Replace with actual API call
-  const newCategory = { ...category, id: Date.now().toString() };
-  mockCategories.push(newCategory);
-  return Promise.resolve(newCategory);
+  try {
+    const newCategory = { ...category, id: Date.now().toString() };
+    const categories = await getCategories();
+    categories.push(newCategory);
+    
+    // Save to localStorage
+    localStorage.setItem('categories', JSON.stringify(categories));
+    
+    // Save to Supabase in real-time (if connected)
+    const supabase = (await import('./supabase')).getSupabaseClient();
+    if (supabase) {
+      try {
+        await supabase.from('categories').insert([{
+          id: newCategory.id,
+          name: newCategory.name,
+          bedrooms: newCategory.bedrooms,
+          description: newCategory.description,
+        }]);
+        console.log('✅ Category saved to Supabase in real-time');
+      } catch (error) {
+        console.error('❌ Failed to save category to Supabase:', error);
+      }
+    }
+    
+    return newCategory;
+  } catch (error) {
+    console.error('Error creating category:', error);
+    throw error;
+  }
 };
 
 export const updateCategory = async (id: string, category: Partial<Category>): Promise<Category> => {
-  // TODO: Replace with actual API call
-  const index = mockCategories.findIndex(c => c.id === id);
-  if (index !== -1) {
-    mockCategories[index] = { ...mockCategories[index], ...category };
-    return Promise.resolve(mockCategories[index]);
+  try {
+    const categories = await getCategories();
+    const index = categories.findIndex(c => c.id === id);
+    if (index !== -1) {
+      categories[index] = { ...categories[index], ...category };
+      
+      // Save to localStorage
+      localStorage.setItem('categories', JSON.stringify(categories));
+      
+      // Save to Supabase in real-time (if connected)
+      const supabase = (await import('./supabase')).getSupabaseClient();
+      if (supabase) {
+        try {
+          await supabase.from('categories').update({
+            name: categories[index].name,
+            bedrooms: categories[index].bedrooms,
+            description: categories[index].description,
+          }).eq('id', id);
+          console.log('✅ Category updated in Supabase in real-time');
+        } catch (error) {
+          console.error('❌ Failed to update category in Supabase:', error);
+        }
+      }
+      
+      return categories[index];
+    }
+    throw new Error('Category not found');
+  } catch (error) {
+    console.error('Error updating category:', error);
+    throw error;
   }
-  throw new Error('Category not found');
 };
 
 export const deleteCategory = async (id: string): Promise<void> => {
-  // TODO: Replace with actual API call
-  const index = mockCategories.findIndex(c => c.id === id);
-  if (index !== -1) {
-    mockCategories.splice(index, 1);
+  try {
+    const categories = await getCategories();
+    const index = categories.findIndex(c => c.id === id);
+    if (index !== -1) {
+      categories.splice(index, 1);
+      
+      // Save to localStorage
+      localStorage.setItem('categories', JSON.stringify(categories));
+      
+      // Delete from Supabase in real-time (if connected)
+      const supabase = (await import('./supabase')).getSupabaseClient();
+      if (supabase) {
+        try {
+          await supabase.from('categories').delete().eq('id', id);
+          console.log('✅ Category deleted from Supabase in real-time');
+        } catch (error) {
+          console.error('❌ Failed to delete category from Supabase:', error);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error deleting category:', error);
+    throw error;
   }
-  return Promise.resolve();
 };
 
 // Locations API

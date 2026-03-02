@@ -3,14 +3,14 @@ import { Navbar } from '../components/Navbar';
 import { HeroSlider } from '../components/HeroSlider';
 import { PropertyCard } from '../components/PropertyCard';
 import { WhatsAppButton } from '../components/WhatsAppButton';
-import { getProperties, Property } from '../services/api';
+import { getProperties, Property, getCategories, Category } from '../services/api';
 import { Mail, Phone, MapPin } from 'lucide-react';
 
 type CategoryFilter = 'All' | 'Bedsitter' | '1-Bedroom' | '2-Bedroom' | '3-Bedroom' | '4-Bedroom';
 
 export const HomePage = () => {
   const [properties, setProperties] = useState<Property[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('All');
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [loading, setLoading] = useState(true);
   const [whatsappNumber, setWhatsappNumber] = useState('+254712345678');
   const [companyDetails, setCompanyDetails] = useState({
@@ -19,6 +19,7 @@ export const HomePage = () => {
     phone: '+254 700 000 000',
     address: 'Nairobi, Kenya',
   });
+  const [categories, setCategories] = useState<string[]>(['All', 'Bedsitter', '1-Bedroom', '2-Bedroom', '3-Bedroom', '4-Bedroom']);
 
   useEffect(() => {
     const loadProperties = async () => {
@@ -33,6 +34,23 @@ export const HomePage = () => {
     };
 
     loadProperties();
+  }, []);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const categoryData = await getCategories();
+        const categoryNames = categoryData.map((cat: Category) => cat.name);
+        setCategories(['All', ...categoryNames]);
+        console.log('✅ Categories loaded dynamically:', categoryNames);
+      } catch (error) {
+        console.error('Error loading categories:', error);
+        // Fallback to default categories if loading fails
+        setCategories(['All', 'Bedsitter', '1-Bedroom', '2-Bedroom', '3-Bedroom', '4-Bedroom']);
+      }
+    };
+
+    loadCategories();
   }, []);
 
   useEffect(() => {
@@ -89,8 +107,6 @@ export const HomePage = () => {
     window.addEventListener('generalSettingsChanged', handleSettingsChange);
     return () => window.removeEventListener('generalSettingsChanged', handleSettingsChange);
   }, []);
-
-  const categories: CategoryFilter[] = ['All', 'Bedsitter', '1-Bedroom', '2-Bedroom', '3-Bedroom', '4-Bedroom'];
 
   const filteredProperties = selectedCategory === 'All'
     ? properties
