@@ -3,7 +3,6 @@ import { X, Calendar, FileText, CreditCard, Smartphone } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
 import { getSettings, PaymentMethod, createBooking } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -22,7 +21,19 @@ export const BookingModal = ({
   propertyId,
   onBookingCreated
 }: BookingModalProps) => {
-  const { user } = useAuth();
+  // Get user from localStorage directly to avoid AuthContext dependency
+  const getUserFromStorage = () => {
+    const storedUser = localStorage.getItem('skyway_user');
+    if (storedUser) {
+      try {
+        return JSON.parse(storedUser);
+      } catch (error) {
+        return null;
+      }
+    }
+    return null;
+  };
+  
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [additionalInfo, setAdditionalInfo] = useState('');
@@ -58,18 +69,14 @@ export const BookingModal = ({
       loadPaymentMethods();
       
       // Auto-fill customer data from logged-in user
+      const user = getUserFromStorage();
       if (user) {
         setCustomerName(user.name || '');
         setCustomerEmail(user.email || '');
-        // Get phone from user metadata if available
-        const userData = localStorage.getItem('skyway_user');
-        if (userData) {
-          const parsedUser = JSON.parse(userData);
-          setCustomerPhone(parsedUser.phone || '');
-        }
+        setCustomerPhone(user.phone || '');
       }
     }
-  }, [isOpen, user]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -301,7 +308,7 @@ export const BookingModal = ({
                 placeholder="Enter customer name"
                 className="w-full px-4 py-3 rounded-lg border border-[#6B7F39]/20 bg-white focus:outline-none focus:ring-2 focus:ring-[#6B7F39]/30 transition-all"
                 required
-                disabled={!!user}
+                disabled={!!getUserFromStorage()}
               />
             </div>
 
@@ -318,7 +325,7 @@ export const BookingModal = ({
                 placeholder="Enter customer email"
                 className="w-full px-4 py-3 rounded-lg border border-[#6B7F39]/20 bg-white focus:outline-none focus:ring-2 focus:ring-[#6B7F39]/30 transition-all"
                 required
-                disabled={!!user}
+                disabled={!!getUserFromStorage()}
               />
             </div>
 
@@ -335,7 +342,7 @@ export const BookingModal = ({
                 placeholder="Enter customer phone"
                 className="w-full px-4 py-3 rounded-lg border border-[#6B7F39]/20 bg-white focus:outline-none focus:ring-2 focus:ring-[#6B7F39]/30 transition-all"
                 required
-                disabled={!!user}
+                disabled={!!getUserFromStorage()}
               />
             </div>
           </div>

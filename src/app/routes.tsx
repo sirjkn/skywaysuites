@@ -23,9 +23,9 @@ import { useEffect, useState } from 'react';
 
 // Maintenance Mode Wrapper - checks if maintenance mode is enabled
 const MaintenanceWrapper = ({ children }: { children: React.ReactNode }) => {
-  const { isAdmin } = useAuth();
   const location = useLocation();
   const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   
   useEffect(() => {
     const checkMaintenance = () => {
@@ -43,15 +43,43 @@ const MaintenanceWrapper = ({ children }: { children: React.ReactNode }) => {
       }
     };
     
+    // Check admin status from localStorage
+    const checkAdminStatus = () => {
+      const storedUser = localStorage.getItem('skyway_user');
+      if (storedUser) {
+        try {
+          const user = JSON.parse(storedUser);
+          setIsAdmin(user.role === 'admin');
+        } catch (error) {
+          setIsAdmin(false);
+        }
+      } else {
+        setIsAdmin(false);
+      }
+    };
+    
     checkMaintenance();
+    checkAdminStatus();
     
     // Listen for settings changes
     const handleSettingsChange = () => {
       checkMaintenance();
     };
     
+    // Listen for auth changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'skyway_user') {
+        checkAdminStatus();
+      }
+    };
+    
     window.addEventListener('generalSettingsChanged', handleSettingsChange);
-    return () => window.removeEventListener('generalSettingsChanged', handleSettingsChange);
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('generalSettingsChanged', handleSettingsChange);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
   
   // Allow admins to access the site even in maintenance mode
